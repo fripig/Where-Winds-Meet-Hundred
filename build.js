@@ -20,16 +20,19 @@ const appJsBrowser = appJs.replace(
     ''
 ).trimEnd();
 
-// 1. Replace alpine.min.js external reference with inline
+// 1. Remove Alpine external reference from <head>
+//    (defer is ignored on inline scripts, so we must move it after teamApp)
 html = html.replace(
-    '<script defer src="alpine.min.js"></script>',
-    '<script defer>\n' + alpineJs + '\n    </script>'
+    '    <script defer src="alpine.min.js"></script>\n',
+    ''
 );
 
-// 2. Replace alpine-app.js external reference with inline
+// 2. Replace alpine-app.js with inline teamApp + Alpine.js (in correct order)
+//    teamApp must be defined before Alpine.js starts, so Alpine can find it
 html = html.replace(
     '<script src="src/alpine-app.js"></script>',
-    '<script>\n' + appJsBrowser + '\n    </script>'
+    '<script>\n' + appJsBrowser + '\n    </script>\n' +
+    '    <script>\n' + alpineJs + '\n    </script>'
 );
 
 // Write output
