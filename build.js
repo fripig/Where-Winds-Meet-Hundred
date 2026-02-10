@@ -41,5 +41,15 @@ if (!fs.existsSync(outDir)) {
 }
 fs.writeFileSync(path.join(outDir, 'index.html'), html, 'utf-8');
 
+// Copy PWA assets to dist/
+fs.copyFileSync(path.join(root, 'manifest.json'), path.join(outDir, 'manifest.json'));
+fs.copyFileSync(path.join(root, 'sw.js'), path.join(outDir, 'sw.js'));
+const iconsDir = path.join(outDir, 'icons');
+if (!fs.existsSync(iconsDir)) {
+    fs.mkdirSync(iconsDir);
+}
+fs.copyFileSync(path.join(root, 'icons', 'icon.svg'), path.join(iconsDir, 'icon.svg'));
+
 const size = (fs.statSync(path.join(outDir, 'index.html')).size / 1024).toFixed(1);
 console.log(`Built dist/index.html (${size} KB) — single file, all JS inlined`);
+console.log('Copied PWA assets: manifest.json, sw.js, icons/icon.svg');

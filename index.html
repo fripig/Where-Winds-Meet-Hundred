@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>百業戰分組排班系統 - 緊湊自動寬度版</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a73e8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
     <script defer src="alpine.min.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" async></script>
     <style>
@@ -507,6 +511,7 @@
     </div>
 
     <script src="src/alpine-app.js"></script>
+    <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');</script>
 
 </body>
 
