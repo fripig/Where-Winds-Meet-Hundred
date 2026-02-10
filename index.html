@@ -562,7 +562,7 @@
                             <div class="card-btns">
                                 <button class="icon-btn" @click="toggleMoveMenu(card.id)">⤴</button>
                                 <button class="icon-btn" @click="startEdit(card.id)">✏️</button>
-                                <button class="icon-btn" @click="deleteCard(card.id)">✕</button>
+                                <button class="icon-btn" @click="moveCardTo(card.id, 'repo')" title="移出隊伍">↩</button>
                             </div>
                             <div class="move-menu" x-show="moveMenuCardId === card.id" @click.outside="moveMenuCardId = null">
                                 <template x-for="col in getMoveTargets(card.id)" :key="col.id">
