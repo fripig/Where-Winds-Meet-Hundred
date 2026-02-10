@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>百業戰分組排班系統 - 緊湊自動寬度版</title>
+    <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" async></script>
     <style>
         body {
@@ -368,563 +369,537 @@
     </style>
 </head>
 
-<body>
+<body x-data="teamApp()">
 
     <div class="container">
         <div class="input-section">
-            <h2 style="margin:0 0 10px 0; font-size: 1.1em;">🛠️ 角色管理 <span id="saveStatus" class="save-hint">●
+            <h2 style="margin:0 0 10px 0; font-size: 1.1em;">🛠️ 角色管理 <span x-show="saveStatus" x-transition class="save-hint">●
                     已自動儲存</span></h2>
             <div class="form-row">
-                <input type="hidden" id="editingId" value="">
                 <div class="form-group" style="flex: 1.5;">
                     <label>角色名稱</label>
-                    <input type="text" id="charName" placeholder="輸入..."
+                    <input type="text" x-model="charName" placeholder="輸入..."
                         style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px;">
                 </div>
                 <div class="form-group" style="flex: 3;">
                     <label>職業 (長紅/陌黃/補綠/他藍)</label>
-                    <div class="checkbox-group" id="jobGroup">
-                        <label><input type="checkbox" value="隊長"><span>⭐隊長</span></label>
-                        <label><input type="checkbox" value="陌刀"><span>陌刀</span></label>
-                        <label><input type="checkbox" value="補"><span>補</span></label>
-                        <label><input type="checkbox" value="玉玉"><span>玉玉</span></label>
-                        <label><input type="checkbox" value="無名"><span>無名</span></label>
-                        <label><input type="checkbox" value="酒酒"><span>酒酒</span></label>
-                        <label><input type="checkbox" value="雙劍"><span>雙劍</span></label>
+                    <div class="checkbox-group">
+                        <template x-for="job in availableJobs" :key="job">
+                            <label :class="{ 'checked': selectedJobs.includes(job) }">
+                                <input type="checkbox" :value="job" x-model="selectedJobs">
+                                <span x-text="job === '隊長' ? '⭐' + job : job"></span>
+                            </label>
+                        </template>
                     </div>
                 </div>
                 <div class="form-group">
                     <label>場次</label>
-                    <div class="checkbox-group" id="dayGroup">
-                        <label><input type="checkbox" value="六"><span>六</span></label>
-                        <label><input type="checkbox" value="日"><span>日</span></label>
+                    <div class="checkbox-group">
+                        <template x-for="day in ['六', '日']" :key="day">
+                            <label :class="{ 'checked': selectedDays.includes(day) }">
+                                <input type="checkbox" :value="day" x-model="selectedDays">
+                                <span x-text="day"></span>
+                            </label>
+                        </template>
                     </div>
                 </div>
-                <button id="addChar" onclick="handleNewOrUpdateCharacter()">儲存</button>
-                <button id="cancelEdit" onclick="resetForm()" style="display:none;">X</button>
-                <button onclick="toggleImport()" class="action-btn" style="background: #34a853;">📥 匯入</button>
-                <button onclick="downloadImage()" class="action-btn" style="background: #555;">📷 存圖</button>
-                <button onclick="toggleSettings()" class="action-btn" style="background: #607d8b;">⚙️ 設定</button>
+                <button id="addChar" @click="handleNewOrUpdateCharacter()">儲存</button>
+                <button x-show="editingId" @click="resetForm()">X</button>
+                <button @click="showImport = !showImport" class="action-btn" style="background: #34a853;">📥 匯入</button>
+                <button @click="downloadImage()" class="action-btn" style="background: #555;">📷 存圖</button>
+                <button @click="showSettings = !showSettings" class="action-btn" style="background: #607d8b;">⚙️ 設定</button>
             </div>
 
-            <div id="importSection"
-                style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-                <textarea id="csvInput" placeholder="貼上 CSV 格式 (username,message)..."
+            <div x-show="showImport" x-transition
+                style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                <textarea x-model="csvInput" placeholder="貼上 CSV 格式 (username,message)..."
                     style="width: 100%; height: 100px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 16px; box-sizing: border-box;"></textarea>
-                <button onclick="processCSV()"
+                <button @click="processCSV()"
                     style="margin-top: 8px; background: #1a73e8; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.9em;">確認匯入</button>
             </div>
 
-            <div id="settingsSection"
-                style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+            <div x-show="showSettings" x-transition
+                style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
                 <h4 style="margin-top: 0; margin-bottom: 10px;">顯示隊伍</h4>
-                <div class="checkbox-group" id="teamVisibilityGroup"></div>
+                <div class="checkbox-group">
+                    <template x-for="config in teamConfigs" :key="config.id">
+                        <label :class="{ 'checked': config.visible }">
+                            <input type="checkbox" :value="config.id" x-model="config.visible" @change="updateTeamVisibility()">
+                            <span x-text="config.name"></span>
+                        </label>
+                    </template>
+                </div>
             </div>
         </div>
 
         <div class="repository-row">
-            <h3 style="margin:0 0 5px 0; font-size:0.9em;">📚 角色庫 <span class="count-badge" id="count-repo"
-                    style="background:#888">0</span></h3>
-            <div id="repo" class="repo-scroll-container"></div>
+            <h3 style="margin:0 0 5px 0; font-size:0.9em;">📚 角色庫 <span class="count-badge"
+                    style="background:#888" x-text="getColumnCount('repo')">0</span></h3>
+            <div class="repo-scroll-container" 
+                 @drop="drop($event, 'repo')" 
+                 @dragover.prevent
+                 data-column="repo">
+                <template x-for="card in getColumnCards('repo')" :key="card.id">
+                    <div class="card" 
+                         draggable="true" 
+                         :data-card-id="card.id"
+                         @dragstart="dragStart($event, card.id)"
+                         @touchstart="touchStart($event, card.id)"
+                         @touchmove="touchMove($event)"
+                         @touchend="touchEnd($event)">
+                        <div class="card-btns">
+                            <button class="icon-btn" @click="startEdit(card.id)">✏️</button>
+                            <button class="icon-btn" @click="deleteCard(card.id)">✕</button>
+                        </div>
+                        <strong x-text="card.name"></strong><br>
+                        <template x-for="job in card.jobs" :key="job">
+                            <span class="job-tag" :class="getJobClass(job)" x-text="job"></span>
+                        </template>
+                    </div>
+                </template>
+            </div>
         </div>
 
-        <div class="board" id="mainBoard"></div>
+        <div class="board" :style="'grid-template-columns: repeat(' + visibleTeams.length + ', 1fr)'">
+            <template x-for="config in teamConfigs" :key="config.id">
+                <div class="column" 
+                     x-show="config.visible"
+                     @drop="drop($event, config.id)" 
+                     @dragover.prevent
+                     :data-column="config.id">
+                    <div class="column-header" style="flex-wrap: wrap;">
+                        <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                            <input class="column-title" x-model="config.name" @change="saveState()">
+                            <div class="header-actions">
+                                <span class="count-badge" x-text="getColumnCount(config.id)">0</span>
+                            </div>
+                        </div>
+                        <div style="width:100%; font-size:0.75em; color:#ddd; margin-top:4px; display:flex; flex-wrap:wrap; gap:4px;">
+                            <template x-for="(count, job) in getJobStats(config.id)" :key="job">
+                                <span style="background:rgba(255,255,255,0.2); padding:1px 4px; border-radius:3px; color: #555; border: 1px solid #ddd;">
+                                    <span x-text="job + ':' + count"></span>
+                                </span>
+                            </template>
+                            <span x-show="Object.keys(getJobStats(config.id)).length === 0" style="opacity:0.5; font-size: 0.9em;">-</span>
+                        </div>
+                    </div>
+                    <template x-for="card in getColumnCards(config.id)" :key="card.id">
+                        <div class="card" 
+                             draggable="true" 
+                             :data-card-id="card.id"
+                             @dragstart="dragStart($event, card.id)"
+                             @touchstart="touchStart($event, card.id)"
+                             @touchmove="touchMove($event)"
+                             @touchend="touchEnd($event)">
+                            <div class="card-btns">
+                                <button class="icon-btn" @click="startEdit(card.id)">✏️</button>
+                                <button class="icon-btn" @click="deleteCard(card.id)">✕</button>
+                            </div>
+                            <strong x-text="card.name"></strong><br>
+                            <template x-for="job in card.jobs" :key="job">
+                                <span class="job-tag" :class="getJobClass(job)" x-text="job"></span>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
     </div>
 
     <script>
-        const storageKey = 'teamData_v2';
-        let teamConfigs = [
-            { id: 'team1', name: '🚩 第一隊', visible: true },
-            { id: 'team2', name: '🚩 第二隊', visible: true },
-            { id: 'team3', name: '🚩 第三隊', visible: true },
-            { id: 'teamMobile', name: '⚡ 機動隊', visible: true }
-        ];
+        function teamApp() {
+            return {
+                storageKey: 'teamData_v2',
+                teamConfigs: [
+                    { id: 'team1', name: '🚩 第一隊', visible: true },
+                    { id: 'team2', name: '🚩 第二隊', visible: true },
+                    { id: 'team3', name: '🚩 第三隊', visible: true },
+                    { id: 'teamMobile', name: '⚡ 機動隊', visible: true }
+                ],
+                cards: {},
+                charName: '',
+                selectedJobs: [],
+                selectedDays: [],
+                editingId: null,
+                saveStatus: false,
+                showImport: false,
+                showSettings: false,
+                csvInput: '',
+                availableJobs: ['隊長', '陌刀', '補', '玉玉', '無名', '酒酒', '雙劍'],
+                
+                // Touch drag state
+                touchDragState: null,
+                touchDragClone: null,
 
-        // ===== :has() CSS fallback for older iOS =====
-        function updateCheckboxStyles() {
-            document.querySelectorAll('.checkbox-group input[type="checkbox"]').forEach(function (cb) {
-                if (cb.checked) {
-                    cb.parentElement.classList.add('checked');
-                } else {
-                    cb.parentElement.classList.remove('checked');
-                }
-            });
-        }
-        document.addEventListener('change', function (e) {
-            if (e.target.matches('.checkbox-group input[type="checkbox"]')) {
-                updateCheckboxStyles();
-            }
-        });
+                init() {
+                    this.loadState();
+                    this.$watch('teamConfigs', () => this.saveState(), { deep: true });
+                },
 
-        // ===== localStorage with try/catch =====
-        function safeGetStorage(key) {
-            try {
-                var data = localStorage.getItem(key);
-                return data ? JSON.parse(data) : null;
-            } catch (e) {
-                console.warn('localStorage read failed:', e);
-                return null;
-            }
-        }
+                get visibleTeams() {
+                    return this.teamConfigs.filter(t => t.visible !== false);
+                },
 
-        function safeSetStorage(key, value) {
-            try {
-                localStorage.setItem(key, JSON.stringify(value));
-            } catch (e) {
-                console.warn('localStorage write failed:', e);
-            }
-        }
-
-        // ===== Touch Drag and Drop System =====
-        var touchDragState = null;
-        var touchDragClone = null;
-        var touchDragPlaceholder = null;
-
-        function getDropTarget(x, y) {
-            // Temporarily hide the clone so elementFromPoint can see through it
-            if (touchDragClone) touchDragClone.style.display = 'none';
-            var el = document.elementFromPoint(x, y);
-            if (touchDragClone) touchDragClone.style.display = '';
-
-            while (el && !(el.id === 'repo' || el.classList.contains('column'))) {
-                el = el.parentElement;
-            }
-            return el;
-        }
-
-        function clearDropHighlights() {
-            document.querySelectorAll('.drop-hover').forEach(function (el) {
-                el.classList.remove('drop-hover');
-            });
-        }
-
-        function onTouchStart(e) {
-            var card = e.target.closest('.card');
-            if (!card) return;
-            // Don't interfere with button taps
-            if (e.target.closest('.icon-btn')) return;
-
-            var touch = e.touches[0];
-            touchDragState = {
-                card: card,
-                startX: touch.clientX,
-                startY: touch.clientY,
-                isDragging: false,
-                offsetX: 0,
-                offsetY: 0
-            };
-        }
-
-        function onTouchMove(e) {
-            if (!touchDragState) return;
-            var touch = e.touches[0];
-            var dx = touch.clientX - touchDragState.startX;
-            var dy = touch.clientY - touchDragState.startY;
-
-            // Require minimum movement to start drag
-            if (!touchDragState.isDragging) {
-                if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
-                touchDragState.isDragging = true;
-
-                // Create visual clone
-                var rect = touchDragState.card.getBoundingClientRect();
-                touchDragState.offsetX = touch.clientX - rect.left;
-                touchDragState.offsetY = touch.clientY - rect.top;
-
-                touchDragClone = touchDragState.card.cloneNode(true);
-                touchDragClone.className = 'card dragging';
-                touchDragClone.style.width = rect.width + 'px';
-                touchDragClone.style.left = rect.left + 'px';
-                touchDragClone.style.top = rect.top + 'px';
-                document.body.appendChild(touchDragClone);
-
-                // Dim original
-                touchDragState.card.style.opacity = '0.3';
-            }
-
-            if (touchDragState.isDragging) {
-                e.preventDefault();
-                touchDragClone.style.left = (touch.clientX - touchDragState.offsetX) + 'px';
-                touchDragClone.style.top = (touch.clientY - touchDragState.offsetY) + 'px';
-
-                // Highlight drop target
-                clearDropHighlights();
-                var target = getDropTarget(touch.clientX, touch.clientY);
-                if (target && target !== touchDragState.card.parentElement) {
-                    target.classList.add('drop-hover');
-                }
-            }
-        }
-
-        function onTouchEnd(e) {
-            if (!touchDragState) return;
-
-            if (touchDragState.isDragging) {
-                var touch = e.changedTouches[0];
-                var target = getDropTarget(touch.clientX, touch.clientY);
-
-                if (target) {
-                    target.appendChild(touchDragState.card);
-                    updateCounts();
-                    saveState();
-                }
-
-                // Cleanup
-                touchDragState.card.style.opacity = '';
-                if (touchDragClone) {
-                    touchDragClone.remove();
-                    touchDragClone = null;
-                }
-                clearDropHighlights();
-            }
-
-            touchDragState = null;
-        }
-
-        document.addEventListener('touchstart', onTouchStart, { passive: true });
-        document.addEventListener('touchmove', onTouchMove, { passive: false });
-        document.addEventListener('touchend', onTouchEnd);
-
-        // ===== Desktop Drag and Drop (kept for desktop browsers) =====
-        function allowDrop(ev) { ev.preventDefault(); }
-        function drag(ev) { ev.dataTransfer.setData("cardId", ev.target.id); }
-        function drop(ev) {
-            ev.preventDefault();
-            var cardId = ev.dataTransfer.getData("cardId");
-            if (cardId) {
-                var target = ev.target;
-                while (target && !(target.id === 'repo' || target.classList.contains('column'))) { target = target.parentElement; }
-                if (target) {
-                    target.appendChild(document.getElementById(cardId));
-                    updateCounts();
-                    saveState();
-                }
-            }
-        }
-
-        // ===== Init =====
-        window.onload = function () {
-            var savedData = safeGetStorage(storageKey);
-            if (savedData && savedData.data) {
-                if (savedData.configs) {
-                    teamConfigs = savedData.configs.map(function (c) {
-                        return Object.assign({}, c, { visible: c.visible !== false });
-                    });
-                }
-                renderBoard();
-                Object.keys(savedData.data).forEach(function (colId) {
-                    var columnEl = document.getElementById(colId);
-                    if (columnEl) {
-                        savedData.data[colId].forEach(function (char) {
-                            createCard(char.name, char.jobs, char.days, colId, char.id);
-                        });
+                safeGetStorage(key) {
+                    try {
+                        const data = localStorage.getItem(key);
+                        return data ? JSON.parse(data) : null;
+                    } catch (e) {
+                        console.warn('localStorage read failed:', e);
+                        return null;
                     }
-                });
-            } else {
-                renderBoard();
-            }
-            renderSettings();
-            updateCheckboxStyles();
-        };
+                },
 
-        function renderBoard() {
-            var board = document.getElementById('mainBoard');
-            board.innerHTML = '';
-
-            var visibleTeams = teamConfigs.filter(function (t) { return t.visible !== false; });
-            // On mobile, CSS handles 1-column override; for desktop set dynamic columns
-            board.style.gridTemplateColumns = 'repeat(' + visibleTeams.length + ', 1fr)';
-
-            teamConfigs.forEach(function (config) {
-                var col = document.createElement('div');
-                col.className = 'column';
-                col.id = config.id;
-                col.ondrop = drop;
-                col.ondragover = allowDrop;
-
-                if (config.visible === false) {
-                    col.style.display = 'none';
-                }
-
-                col.innerHTML =
-                    '<div class="column-header" style="flex-wrap: wrap;">' +
-                    '    <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">' +
-                    '        <input class="column-title" value="' + config.name + '" onchange="saveState()">' +
-                    '        <div class="header-actions">' +
-                    '            <span class="count-badge" id="count-' + config.id + '">0</span>' +
-                    '        </div>' +
-                    '    </div>' +
-                    '    <div id="stats-' + config.id + '" style="width:100%; font-size:0.75em; color:#ddd; margin-top:4px; display:flex; flex-wrap:wrap; gap:4px;"></div>' +
-                    '</div>';
-                board.appendChild(col);
-            });
-            updateCounts();
-        }
-
-        function saveState() {
-            var data = {};
-            var allCols = ['repo'].concat(teamConfigs.map(function (t) { return t.id; }));
-            allCols.forEach(function (id) {
-                var col = document.getElementById(id);
-                if (col) {
-                    data[id] = Array.from(col.querySelectorAll('.card')).map(function (c) {
-                        return {
-                            id: c.id,
-                            name: c.dataset.name,
-                            jobs: JSON.parse(c.dataset.jobs),
-                            days: JSON.parse(c.dataset.days)
-                        };
-                    });
-                }
-            });
-            var configs = teamConfigs.map(function (t) {
-                var el = document.querySelector('#' + t.id + ' .column-title');
-                return {
-                    id: t.id,
-                    name: el ? el.value : t.name,
-                    visible: t.visible
-                };
-            });
-            safeSetStorage(storageKey, { data: data, configs: configs });
-            var hint = document.getElementById('saveStatus');
-            hint.style.display = 'inline';
-            setTimeout(function () { hint.style.display = 'none'; }, 1500);
-        }
-
-        function toggleSettings() {
-            var div = document.getElementById('settingsSection');
-            div.style.display = div.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function renderSettings() {
-            var container = document.getElementById('teamVisibilityGroup');
-            container.innerHTML = '';
-            teamConfigs.forEach(function (config) {
-                var label = document.createElement('label');
-                label.innerHTML = '<input type="checkbox" value="' + config.id + '" ' + (config.visible !== false ? 'checked' : '') + ' onchange="updateTeamVisibility(\'' + config.id + '\')"><span>' + config.name + '</span>';
-                container.appendChild(label);
-            });
-            updateCheckboxStyles();
-        }
-
-        function updateTeamVisibility(id) {
-            var config = teamConfigs.find(function (c) { return c.id === id; });
-            if (config) {
-                config.visible = !config.visible;
-                var col = document.getElementById(id);
-                if (col) col.style.display = config.visible ? 'block' : 'none';
-
-                var visibleCount = teamConfigs.filter(function (t) { return t.visible !== false; }).length;
-                document.getElementById('mainBoard').style.gridTemplateColumns = 'repeat(' + visibleCount + ', 1fr)';
-
-                saveState();
-                updateCheckboxStyles();
-            }
-        }
-
-        function createCard(name, jobs, days, targetColId, existingId) {
-            var cardId = existingId || "char-" + Date.now() + Math.random().toString(16).slice(2);
-            var card = document.createElement('div');
-            card.className = 'card';
-            card.draggable = true;
-            card.id = cardId;
-            card.ondragstart = drag;
-            card.dataset.name = name;
-            card.dataset.jobs = JSON.stringify(jobs);
-            card.dataset.days = JSON.stringify(days);
-
-            var tags = jobs.map(function (j) {
-                var cls = 'job-blue';
-                if (j === '隊長') cls = 'job-red';
-                else if (j === '陌刀') cls = 'job-yellow';
-                else if (j === '補') cls = 'job-green';
-                return '<span class="job-tag ' + cls + '">' + j + '</span>';
-            }).join('');
-
-            card.innerHTML =
-                '<div class="card-btns">' +
-                '    <button class="icon-btn" onclick="startEdit(\'' + cardId + '\')">✏️</button>' +
-                '    <button class="icon-btn" onclick="deleteCard(\'' + cardId + '\')">✕</button>' +
-                '</div>' +
-                '<strong>' + name + '</strong><br>' + tags;
-
-            document.getElementById(targetColId).appendChild(card);
-            updateCounts();
-        }
-
-        function handleNewOrUpdateCharacter() {
-            var name = document.getElementById('charName').value.trim();
-            var jobs = Array.from(document.querySelectorAll('#jobGroup input:checked')).map(function (cb) { return cb.value; });
-            var days = Array.from(document.querySelectorAll('#dayGroup input:checked')).map(function (cb) { return cb.value; });
-            var eid = document.getElementById('editingId').value;
-            if (!name || jobs.length === 0) return;
-
-            if (eid) {
-                var old = document.getElementById(eid);
-                var pid = old.parentElement.id;
-                old.remove();
-                createCard(name, jobs, days, pid, eid);
-            } else {
-                createCard(name, jobs, days, 'repo');
-            }
-            resetForm();
-            saveState();
-        }
-
-        function startEdit(id) {
-            var c = document.getElementById(id);
-            document.getElementById('charName').value = c.dataset.name;
-            document.getElementById('editingId').value = id;
-            var jobs = JSON.parse(c.dataset.jobs);
-            document.querySelectorAll('#jobGroup input').forEach(function (cb) {
-                cb.checked = jobs.includes(cb.value);
-            });
-            document.getElementById('cancelEdit').style.display = 'inline';
-            updateCheckboxStyles();
-            document.getElementById('charName').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        function resetForm() {
-            document.getElementById('charName').value = '';
-            document.getElementById('editingId').value = '';
-            document.querySelectorAll('input:checked').forEach(function (cb) { cb.checked = false; });
-            document.getElementById('cancelEdit').style.display = 'none';
-            updateCheckboxStyles();
-        }
-
-        function deleteCard(id) {
-            if (confirm("確定刪除此角色？")) {
-                document.getElementById(id).remove();
-                updateCounts();
-                saveState();
-            }
-        }
-
-        function updateCounts() {
-            var allIds = ['repo'].concat(teamConfigs.map(function (t) { return t.id; }));
-            allIds.forEach(function (id) {
-                var el = document.getElementById('count-' + id);
-                var col = document.getElementById(id);
-                if (el && col) {
-                    var cards = col.querySelectorAll('.card');
-                    el.innerText = cards.length;
-
-                    // Update Job Stats
-                    var statsEl = document.getElementById('stats-' + id);
-                    if (statsEl) {
-                        var jobCounts = {};
-                        cards.forEach(function (c) {
-                            var jobs = JSON.parse(c.dataset.jobs);
-                            jobs.forEach(function (j) {
-                                jobCounts[j] = (jobCounts[j] || 0) + 1;
-                            });
-                        });
-
-                        var entries = Object.keys(jobCounts).map(function (job) {
-                            return '<span style="background:rgba(255,255,255,0.2); padding:1px 4px; border-radius:3px; color: #555; border: 1px solid #ddd;">' + job + ':' + jobCounts[job] + '</span>';
-                        });
-                        statsEl.innerHTML = entries.length > 0 ? entries.join('') : '<span style="opacity:0.5; font-size: 0.9em;">-</span>';
+                safeSetStorage(key, value) {
+                    try {
+                        localStorage.setItem(key, JSON.stringify(value));
+                    } catch (e) {
+                        console.warn('localStorage write failed:', e);
                     }
-                }
-            });
-        }
+                },
 
-        // Column drag (desktop only) - removed on mobile, users reorder via settings
-        var draggedColId = null;
-        function dragColumn(ev) { draggedColId = ev.target.parentElement.id; }
-
-        var mainBoard = document.getElementById('mainBoard');
-        mainBoard.ondragover = function (e) { e.preventDefault(); };
-        mainBoard.ondrop = function (e) {
-            var targetCol = e.target.closest('.column');
-            if (targetCol && draggedColId && targetCol.id !== draggedColId) {
-                var fromIdx = teamConfigs.findIndex(function (t) { return t.id === draggedColId; });
-                var toIdx = teamConfigs.findIndex(function (t) { return t.id === targetCol.id; });
-                var movedItem = teamConfigs.splice(fromIdx, 1)[0];
-                teamConfigs.splice(toIdx, 0, movedItem);
-                saveState();
-                // Re-render in place instead of location.reload()
-                var savedData = safeGetStorage(storageKey);
-                if (savedData && savedData.data) {
-                    renderBoard();
-                    Object.keys(savedData.data).forEach(function (colId) {
-                        var columnEl = document.getElementById(colId);
-                        if (columnEl) {
-                            savedData.data[colId].forEach(function (char) {
-                                createCard(char.name, char.jobs, char.days, colId, char.id);
-                            });
+                loadState() {
+                    const savedData = this.safeGetStorage(this.storageKey);
+                    if (savedData) {
+                        if (savedData.configs) {
+                            this.teamConfigs = savedData.configs.map(c => ({
+                                ...c,
+                                visible: c.visible !== false
+                            }));
                         }
-                    });
-                }
-            }
-        };
+                        if (savedData.data) {
+                            this.cards = savedData.data;
+                        }
+                    } else {
+                        // Initialize with empty columns
+                        this.cards = {
+                            repo: [],
+                            team1: [],
+                            team2: [],
+                            team3: [],
+                            teamMobile: []
+                        };
+                    }
+                },
 
-        function toggleImport() {
-            var div = document.getElementById('importSection');
-            div.style.display = div.style.display === 'none' ? 'block' : 'none';
-        }
+                saveState() {
+                    const configs = this.teamConfigs.map(t => ({
+                        id: t.id,
+                        name: t.name,
+                        visible: t.visible
+                    }));
+                    this.safeSetStorage(this.storageKey, { data: this.cards, configs });
+                    this.saveStatus = true;
+                    setTimeout(() => { this.saveStatus = false; }, 1500);
+                },
 
-        function processCSV() {
-            var text = document.getElementById('csvInput').value.trim();
-            if (!text) return;
-            var lines = text.split('\n');
+                getColumnCards(columnId) {
+                    return this.cards[columnId] || [];
+                },
 
-            // Skip header if present
-            var startIdx = lines[0].includes('username') ? 1 : 0;
+                getColumnCount(columnId) {
+                    return this.getColumnCards(columnId).length;
+                },
 
-            for (var i = startIdx; i < lines.length; i++) {
-                var line = lines[i].trim();
-                if (!line) continue;
-
-                var parts = line.split(',');
-                if (parts.length < 2) continue;
-
-                var name = parts[0].trim();
-                var rawMsg = parts.slice(1).join(',').trim();
-
-                // Job Mapping
-                var job = rawMsg;
-                if (rawMsg === '99') job = '酒酒';
-                else if (rawMsg === '奶') job = '補';
-                else if (rawMsg === '劍劍') job = '雙劍';
-
-                createCard(name, [job], [], 'repo');
-            }
-
-            document.getElementById('csvInput').value = '';
-            toggleImport();
-            saveState();
-            alert('匯入完成！');
-        }
-
-        function downloadImage() {
-            if (typeof html2canvas === 'undefined') {
-                alert('截圖功能載入中，請稍後再試。');
-                return;
-            }
-            html2canvas(document.body, { scale: 1 }).then(function (canvas) {
-                var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-                if (isIOS && navigator.share) {
-                    canvas.toBlob(function (blob) {
-                        var file = new File([blob], 'team-distribution.png', { type: 'image/png' });
-                        navigator.share({ files: [file] }).catch(function () {
-                            // Fallback: open in new tab
-                            window.open(canvas.toDataURL(), '_blank');
+                getJobStats(columnId) {
+                    const cards = this.getColumnCards(columnId);
+                    const jobCounts = {};
+                    cards.forEach(card => {
+                        card.jobs.forEach(job => {
+                            jobCounts[job] = (jobCounts[job] || 0) + 1;
                         });
                     });
-                } else if (isIOS) {
-                    // iOS without Web Share API: open image in new tab for long-press save
-                    window.open(canvas.toDataURL(), '_blank');
-                } else {
-                    var link = document.createElement('a');
-                    link.download = 'team-distribution.png';
-                    link.href = canvas.toDataURL();
-                    link.click();
+                    return jobCounts;
+                },
+
+                getJobClass(job) {
+                    if (job === '隊長') return 'job-red';
+                    if (job === '陌刀') return 'job-yellow';
+                    if (job === '補') return 'job-green';
+                    return 'job-blue';
+                },
+
+                handleNewOrUpdateCharacter() {
+                    const name = this.charName.trim();
+                    const jobs = [...this.selectedJobs];
+                    const days = [...this.selectedDays];
+                    
+                    if (!name || jobs.length === 0) return;
+
+                    if (this.editingId) {
+                        // Update existing card
+                        let found = false;
+                        for (const colId in this.cards) {
+                            const idx = this.cards[colId].findIndex(c => c.id === this.editingId);
+                            if (idx !== -1) {
+                                this.cards[colId][idx] = { id: this.editingId, name, jobs, days };
+                                found = true;
+                                break;
+                            }
+                        }
+                    } else {
+                        // Create new card
+                        const cardId = 'char-' + Date.now() + Math.random().toString(16).slice(2);
+                        if (!this.cards.repo) this.cards.repo = [];
+                        this.cards.repo.push({ id: cardId, name, jobs, days });
+                    }
+                    
+                    this.resetForm();
+                    this.saveState();
+                },
+
+                startEdit(cardId) {
+                    let card = null;
+                    for (const colId in this.cards) {
+                        card = this.cards[colId].find(c => c.id === cardId);
+                        if (card) break;
+                    }
+                    
+                    if (card) {
+                        this.charName = card.name;
+                        this.selectedJobs = [...card.jobs];
+                        this.selectedDays = [...card.days];
+                        this.editingId = cardId;
+                        
+                        // Scroll to form
+                        setTimeout(() => {
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }, 100);
+                    }
+                },
+
+                resetForm() {
+                    this.charName = '';
+                    this.selectedJobs = [];
+                    this.selectedDays = [];
+                    this.editingId = null;
+                },
+
+                deleteCard(cardId) {
+                    if (confirm("確定刪除此角色？")) {
+                        for (const colId in this.cards) {
+                            const idx = this.cards[colId].findIndex(c => c.id === cardId);
+                            if (idx !== -1) {
+                                this.cards[colId].splice(idx, 1);
+                                this.saveState();
+                                break;
+                            }
+                        }
+                    }
+                },
+
+                updateTeamVisibility() {
+                    this.saveState();
+                },
+
+                processCSV() {
+                    const text = this.csvInput.trim();
+                    if (!text) return;
+                    
+                    const lines = text.split('\n');
+                    const startIdx = lines[0].includes('username') ? 1 : 0;
+
+                    if (!this.cards.repo) this.cards.repo = [];
+                    
+                    for (let i = startIdx; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+
+                        const parts = line.split(',');
+                        if (parts.length < 2) continue;
+
+                        const name = parts[0].trim();
+                        let rawMsg = parts.slice(1).join(',').trim();
+
+                        // Job mapping
+                        let job = rawMsg;
+                        if (rawMsg === '99') job = '酒酒';
+                        else if (rawMsg === '奶') job = '補';
+                        else if (rawMsg === '劍劍') job = '雙劍';
+
+                        const cardId = 'char-' + Date.now() + Math.random().toString(16).slice(2);
+                        this.cards.repo.push({ id: cardId, name, jobs: [job], days: [] });
+                    }
+
+                    this.csvInput = '';
+                    this.showImport = false;
+                    this.saveState();
+                    alert('匯入完成！');
+                },
+
+                downloadImage() {
+                    if (typeof html2canvas === 'undefined') {
+                        alert('截圖功能載入中，請稍後再試。');
+                        return;
+                    }
+                    html2canvas(document.body, { scale: 1 }).then(canvas => {
+                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                        if (isIOS && navigator.share) {
+                            canvas.toBlob(blob => {
+                                const file = new File([blob], 'team-distribution.png', { type: 'image/png' });
+                                navigator.share({ files: [file] }).catch(() => {
+                                    window.open(canvas.toDataURL(), '_blank');
+                                });
+                            });
+                        } else if (isIOS) {
+                            window.open(canvas.toDataURL(), '_blank');
+                        } else {
+                            const link = document.createElement('a');
+                            link.download = 'team-distribution.png';
+                            link.href = canvas.toDataURL();
+                            link.click();
+                        }
+                    }).catch(err => {
+                        console.error('Screenshot failed:', err);
+                        alert('截圖失敗，請稍後再試。');
+                    });
+                },
+
+                // Drag and Drop
+                dragStart(event, cardId) {
+                    event.dataTransfer.setData('cardId', cardId);
+                },
+
+                drop(event, targetColumnId) {
+                    event.preventDefault();
+                    const cardId = event.dataTransfer.getData('cardId');
+                    if (!cardId) return;
+
+                    // Find and remove card from source column
+                    let card = null;
+                    for (const colId in this.cards) {
+                        const idx = this.cards[colId].findIndex(c => c.id === cardId);
+                        if (idx !== -1) {
+                            card = this.cards[colId].splice(idx, 1)[0];
+                            break;
+                        }
+                    }
+
+                    // Add to target column
+                    if (card) {
+                        if (!this.cards[targetColumnId]) this.cards[targetColumnId] = [];
+                        this.cards[targetColumnId].push(card);
+                        this.saveState();
+                    }
+                },
+
+                // Touch drag and drop
+                touchStart(event, cardId) {
+                    // Don't interfere with button taps
+                    if (event.target.closest('.icon-btn')) return;
+
+                    const touch = event.touches[0];
+                    const card = event.currentTarget;
+                    const rect = card.getBoundingClientRect();
+                    
+                    this.touchDragState = {
+                        cardId: cardId,
+                        startX: touch.clientX,
+                        startY: touch.clientY,
+                        isDragging: false,
+                        offsetX: touch.clientX - rect.left,
+                        offsetY: touch.clientY - rect.top,
+                        originalCard: card
+                    };
+                },
+
+                touchMove(event) {
+                    if (!this.touchDragState) return;
+                    
+                    const touch = event.touches[0];
+                    const dx = touch.clientX - this.touchDragState.startX;
+                    const dy = touch.clientY - this.touchDragState.startY;
+
+                    // Require minimum movement to start drag
+                    if (!this.touchDragState.isDragging) {
+                        if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+                        this.touchDragState.isDragging = true;
+
+                        // Create visual clone
+                        const rect = this.touchDragState.originalCard.getBoundingClientRect();
+                        this.touchDragClone = this.touchDragState.originalCard.cloneNode(true);
+                        this.touchDragClone.className = 'card dragging';
+                        this.touchDragClone.style.width = rect.width + 'px';
+                        this.touchDragClone.style.left = rect.left + 'px';
+                        this.touchDragClone.style.top = rect.top + 'px';
+                        document.body.appendChild(this.touchDragClone);
+
+                        // Dim original
+                        this.touchDragState.originalCard.style.opacity = '0.3';
+                    }
+
+                    if (this.touchDragState.isDragging) {
+                        event.preventDefault();
+                        this.touchDragClone.style.left = (touch.clientX - this.touchDragState.offsetX) + 'px';
+                        this.touchDragClone.style.top = (touch.clientY - this.touchDragState.offsetY) + 'px';
+
+                        // Highlight drop target
+                        this.clearDropHighlights();
+                        const target = this.getDropTarget(touch.clientX, touch.clientY);
+                        if (target && target !== this.touchDragState.originalCard.closest('[data-column]')) {
+                            target.classList.add('drop-hover');
+                        }
+                    }
+                },
+
+                touchEnd(event) {
+                    if (!this.touchDragState) return;
+
+                    if (this.touchDragState.isDragging) {
+                        const touch = event.changedTouches[0];
+                        const target = this.getDropTarget(touch.clientX, touch.clientY);
+
+                        if (target) {
+                            const targetColumnId = target.getAttribute('data-column');
+                            if (targetColumnId) {
+                                // Move card between columns
+                                let card = null;
+                                for (const colId in this.cards) {
+                                    const idx = this.cards[colId].findIndex(c => c.id === this.touchDragState.cardId);
+                                    if (idx !== -1) {
+                                        card = this.cards[colId].splice(idx, 1)[0];
+                                        break;
+                                    }
+                                }
+                                if (card) {
+                                    if (!this.cards[targetColumnId]) this.cards[targetColumnId] = [];
+                                    this.cards[targetColumnId].push(card);
+                                    this.saveState();
+                                }
+                            }
+                        }
+
+                        // Cleanup
+                        this.touchDragState.originalCard.style.opacity = '';
+                        if (this.touchDragClone) {
+                            this.touchDragClone.remove();
+                            this.touchDragClone = null;
+                        }
+                        this.clearDropHighlights();
+                    }
+
+                    this.touchDragState = null;
+                },
+
+                getDropTarget(x, y) {
+                    // Temporarily hide the clone so elementFromPoint can see through it
+                    if (this.touchDragClone) this.touchDragClone.style.display = 'none';
+                    let el = document.elementFromPoint(x, y);
+                    if (this.touchDragClone) this.touchDragClone.style.display = '';
+
+                    // Find the closest drop target (column or repo)
+                    while (el && !el.hasAttribute('data-column')) {
+                        el = el.parentElement;
+                    }
+                    return el;
+                },
+
+                clearDropHighlights() {
+                    document.querySelectorAll('.drop-hover').forEach(el => {
+                        el.classList.remove('drop-hover');
+                    });
                 }
-            }).catch(function (err) {
-                console.error('Screenshot failed:', err);
-                alert('截圖失敗，請稍後再試。');
-            });
+            };
         }
     </script>
 
