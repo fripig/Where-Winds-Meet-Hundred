@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <title>百業戰分組排班系統 - 緊湊自動寬度版</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        /* 管理入口 */
+        .input-section {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #444;
+            font-size: 0.85em;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .checkbox-group label {
+            font-weight: normal;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 3px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+
+        .checkbox-group input {
+            display: none;
+        }
+
+        .checkbox-group label:has(input:checked) {
+            background: #e8f0fe;
+            border-color: #1a73e8;
+            color: #1a73e8;
+        }
+
+        /* 頂部角色庫：調整為更緊湊 */
+        .repository-row {
+            background: #d1d8e0;
+            border: 2px dashed #888;
+            border-radius: 12px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+        }
+
+        .repo-scroll-container {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            min-height: 80px;
+            align-items: flex-start;
+        }
+
+        /* 角色卡片基礎樣式 */
+        .card {
+            background: white;
+            border-radius: 6px;
+            padding: 6px 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: grab;
+            position: relative;
+            border-left: 4px solid #1a73e8;
+            font-size: 0.8em;
+        }
+
+        /* ✨ 關鍵修改：角色庫卡片寬度改為自動 */
+        .repo-scroll-container .card {
+            flex: 0 0 auto;
+            min-width: 60px;
+            /* 最小寬度防止太擠 */
+            max-width: 200px;
+            margin-bottom: 0;
+            padding-right: 35px;
+            /* 留空間給右上角按鈕 */
+        }
+
+        /* 下方隊伍板塊保持固定寬度以維持整齊 */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .column {
+            background: #e2e4e6;
+            border-radius: 8px;
+            min-height: 450px;
+            padding: 10px;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .board .card {
+            margin-bottom: 8px;
+            width: auto;
+        }
+
+        /* 隊伍標題區 */
+        .column-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            background: #5e6c84;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: move;
+        }
+
+        .column-title {
+            border: none;
+            background: transparent;
+            color: white;
+            font-weight: bold;
+            font-size: 0.95em;
+            width: 70%;
+        }
+
+        .column-title:focus {
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+
+        /* 按鈕樣式 */
+        .card-btns {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            display: flex;
+            gap: 2px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 11px;
+            cursor: pointer;
+            color: #bbb;
+            padding: 2px;
+        }
+
+        .icon-btn:hover {
+            color: #555;
+        }
+
+        /* 職業配色 */
+        .job-tag {
+            padding: 1px 4px;
+            border-radius: 3px;
+            margin-right: 2px;
+            font-size: 0.7em;
+            border: 1px solid;
+            display: inline-block;
+            margin-top: 2px;
+            white-space: nowrap;
+        }
+
+        .job-red {
+            background: #ffebee;
+            color: #c62828;
+            border-color: #ef9a9a;
+        }
+
+        .job-yellow {
+            background: #fff9c4;
+            color: #f57f17;
+            border-color: #fff176;
+        }
+
+        .job-green {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-color: #a5d6a7;
+        }
+
+        .job-blue {
+            background: #e3f2fd;
+            color: #1565c0;
+            border-color: #bbdefb;
+        }
+
+        .count-badge {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 10px;
+            padding: 1px 5px;
+            font-size: 0.75em;
+        }
+
+        button#addChar {
+            padding: 0 15px;
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            height: 32px;
+            font-size: 0.85em;
+        }
+
+        .save-hint {
+            font-size: 0.7em;
+            color: #4caf50;
+            margin-left: 10px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="input-section">
+            <h2 style="margin:0 0 10px 0; font-size: 1.1em;">🛠️ 角色管理 <span id="saveStatus" class="save-hint">●
+                    已自動儲存</span></h2>
+            <div class="form-row">
+                <input type="hidden" id="editingId" value="">
+                <div class="form-group" style="flex: 1.5;">
+                    <label>角色名稱</label>
+                    <input type="text" id="charName" placeholder="輸入..."
+                        style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div class="form-group" style="flex: 3;">
+                    <label>職業 (長紅/陌黃/補綠/他藍)</label>
+                    <div class="checkbox-group" id="jobGroup">
+                        <label><input type="checkbox" value="隊長"><span>⭐隊長</span></label>
+                        <label><input type="checkbox" value="陌刀"><span>陌刀</span></label>
+                        <label><input type="checkbox" value="補"><span>補</span></label>
+                        <label><input type="checkbox" value="玉玉"><span>玉玉</span></label>
+                        <label><input type="checkbox" value="無名"><span>無名</span></label>
+                        <label><input type="checkbox" value="酒酒"><span>酒酒</span></label>
+                        <label><input type="checkbox" value="雙劍"><span>雙劍</span></label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>場次</label>
+                    <div class="checkbox-group" id="dayGroup">
+                        <label><input type="checkbox" value="六"><span>六</span></label>
+                        <label><input type="checkbox" value="日"><span>日</span></label>
+                    </div>
+                </div>
+                <button id="addChar" onclick="handleNewOrUpdateCharacter()">儲存</button>
+                <button id="cancelEdit" onclick="resetForm()" style="display:none;">X</button>
+                <button onclick="toggleImport()"
+                    style="background: #34a853; color: white; border: none; padding: 0 15px; border-radius: 6px; cursor: pointer; height: 32px; font-weight: bold; font-size: 0.85em; margin-left: 10px;">📥
+                    匯入</button>
+                <button onclick="downloadImage()"
+                    style="background: #555; color: white; border: none; padding: 0 15px; border-radius: 6px; cursor: pointer; height: 32px; font-weight: bold; font-size: 0.85em; margin-left: 10px;">📷
+                    存圖</button>
+                <button onclick="toggleSettings()"
+                    style="background: #607d8b; color: white; border: none; padding: 0 15px; border-radius: 6px; cursor: pointer; height: 32px; font-weight: bold; font-size: 0.85em; margin-left: 10px;">⚙️
+                    設定</button>
+            </div>
+
+            <div id="importSection"
+                style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                <textarea id="csvInput" placeholder="貼上 CSV 格式 (username,message)..."
+                    style="width: 100%; height: 100px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace;"></textarea>
+                <button onclick="processCSV()"
+                    style="margin-top: 8px; background: #1a73e8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">確認匯入</button>
+            </div>
+
+            <div id="settingsSection"
+                style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                <h4 style="margin-top: 0; margin-bottom: 10px;">顯示隊伍</h4>
+                <div class="checkbox-group" id="teamVisibilityGroup"></div>
+            </div>
+        </div>
+
+        <div class="repository-row">
+            <h3 style="margin:0 0 5px 0; font-size:0.9em;">📚 角色庫 (自動寬度) <span class="count-badge" id="count-repo"
+                    style="background:#888">0</span></h3>
+            <div id="repo" class="repo-scroll-container" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        </div>
+
+        <div class="board" id="mainBoard"></div>
+    </div>
+
+    <script>
+        const storageKey = 'teamData_v2';
+        let teamConfigs = [
+            { id: 'team1', name: '🚩 第一隊', visible: true },
+            { id: 'team2', name: '🚩 第二隊', visible: true },
+            { id: 'team3', name: '🚩 第三隊', visible: true },
+            { id: 'teamMobile', name: '⚡ 機動隊', visible: true }
+        ];
+
+        window.onload = function () {
+            const savedData = localStorage.getItem(storageKey);
+            if (savedData) {
+                const parsed = JSON.parse(savedData);
+                if (parsed.configs) {
+                    teamConfigs = parsed.configs.map(c => ({ ...c, visible: c.visible !== false }));
+                }
+                renderBoard();
+                Object.keys(parsed.data).forEach(colId => {
+                    const columnEl = document.getElementById(colId);
+                    if (columnEl) {
+                        parsed.data[colId].forEach(char => createCard(char.name, char.jobs, char.days, colId, char.id));
+                    }
+                });
+            } else {
+                renderBoard();
+                createCard("赤屠", ["陌刀"], [], 'repo');
+                createCard("洛甯", ["隊長", "玉玉"], [], 'repo');
+            }
+            renderSettings();
+        };
+
+        function renderBoard() {
+            const board = document.getElementById('mainBoard');
+            board.innerHTML = '';
+
+            const visibleTeams = teamConfigs.filter(t => t.visible !== false);
+            board.style.gridTemplateColumns = `repeat(${visibleTeams.length}, 1fr)`;
+
+            teamConfigs.forEach(config => {
+                const col = document.createElement('div');
+                col.className = 'column';
+                col.id = config.id;
+                col.ondrop = drop;
+                col.ondragover = allowDrop;
+
+                if (config.visible === false) {
+                    col.style.display = 'none';
+                }
+
+                col.innerHTML = `
+                <div class="column-header" draggable="true" ondragstart="dragColumn(event)" style="flex-wrap: wrap;">
+                    <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                        <input class="column-title" value="${config.name}" onchange="saveState()">
+                        <div class="header-actions">
+                            <span class="count-badge" id="count-${config.id}">0</span>
+                        </div>
+                    </div>
+                    <div id="stats-${config.id}" style="width:100%; font-size:0.75em; color:#ddd; margin-top:4px; display:flex; flex-wrap:wrap; gap:4px;"></div>
+                </div>
+            `;
+                board.appendChild(col);
+            });
+            updateCounts();
+        }
+
+        function saveState() {
+            const data = {};
+            const allCols = ['repo', ...teamConfigs.map(t => t.id)];
+            allCols.forEach(id => {
+                const col = document.getElementById(id);
+                if (col) {
+                    data[id] = Array.from(col.querySelectorAll('.card')).map(c => ({
+                        id: c.id, name: c.dataset.name, jobs: JSON.parse(c.dataset.jobs), days: JSON.parse(c.dataset.days)
+                    }));
+                }
+            });
+            const configs = teamConfigs.map(t => ({
+                id: t.id,
+                name: document.querySelector(`#${t.id} .column-title`)?.value || t.name,
+                visible: t.visible
+            }));
+            localStorage.setItem(storageKey, JSON.stringify({ data, configs }));
+            const hint = document.getElementById('saveStatus');
+            hint.style.display = 'inline';
+            setTimeout(() => hint.style.display = 'none', 1500);
+        }
+
+        function toggleSettings() {
+            const div = document.getElementById('settingsSection');
+            div.style.display = div.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function renderSettings() {
+            const container = document.getElementById('teamVisibilityGroup');
+            container.innerHTML = '';
+            teamConfigs.forEach(config => {
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="checkbox" value="${config.id}" ${config.visible !== false ? 'checked' : ''} onchange="updateTeamVisibility('${config.id}')"><span>${config.name}</span>`;
+                container.appendChild(label);
+            });
+        }
+
+        function updateTeamVisibility(id) {
+            const config = teamConfigs.find(c => c.id === id);
+            if (config) {
+                config.visible = !config.visible;
+                const col = document.getElementById(id);
+                if (col) col.style.display = config.visible ? 'block' : 'none';
+
+                const visibleCount = teamConfigs.filter(t => t.visible !== false).length;
+                document.getElementById('mainBoard').style.gridTemplateColumns = `repeat(${visibleCount}, 1fr)`;
+
+                saveState();
+            }
+        }
+
+        function allowDrop(ev) { ev.preventDefault(); }
+        function drag(ev) { ev.dataTransfer.setData("cardId", ev.target.id); }
+        function drop(ev) {
+            ev.preventDefault();
+            const cardId = ev.dataTransfer.getData("cardId");
+            if (cardId) {
+                let target = ev.target;
+                while (target && !(target.id === 'repo' || target.classList.contains('column'))) { target = target.parentElement; }
+                if (target) {
+                    target.appendChild(document.getElementById(cardId));
+                    updateCounts();
+                    saveState();
+                }
+            }
+        }
+
+        function createCard(name, jobs, days, targetColId, existingId = null) {
+            const cardId = existingId || "char-" + Date.now() + Math.random().toString(16).slice(2);
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.draggable = true;
+            card.id = cardId;
+            card.ondragstart = drag;
+            card.dataset.name = name;
+            card.dataset.jobs = JSON.stringify(jobs);
+            card.dataset.days = JSON.stringify(days);
+
+            const tags = jobs.map(j => {
+                let cls = 'job-blue';
+                if (j === '隊長') cls = 'job-red';
+                else if (j === '陌刀') cls = 'job-yellow';
+                else if (j === '補') cls = 'job-green';
+                return `<span class="job-tag ${cls}">${j}</span>`;
+            }).join('');
+
+            card.innerHTML = `
+            <div class="card-btns">
+                <button class="icon-btn" onclick="startEdit('${cardId}')">✏️</button>
+                <button class="icon-btn" onclick="deleteCard('${cardId}')">✕</button>
+            </div>
+            <strong>${name}</strong><br>${tags}
+        `;
+            document.getElementById(targetColId).appendChild(card);
+            updateCounts();
+        }
+
+        function handleNewOrUpdateCharacter() {
+            const name = document.getElementById('charName').value.trim();
+            const jobs = Array.from(document.querySelectorAll('#jobGroup input:checked')).map(cb => cb.value);
+            const days = Array.from(document.querySelectorAll('#dayGroup input:checked')).map(cb => cb.value);
+            const eid = document.getElementById('editingId').value;
+            if (!name || jobs.length === 0) return;
+
+            if (eid) {
+                const old = document.getElementById(eid);
+                const pid = old.parentElement.id;
+                old.remove();
+                createCard(name, jobs, days, pid, eid);
+            } else {
+                createCard(name, jobs, days, 'repo');
+            }
+            resetForm();
+            saveState();
+        }
+
+        function startEdit(id) {
+            const c = document.getElementById(id);
+            document.getElementById('charName').value = c.dataset.name;
+            document.getElementById('editingId').value = id;
+            const jobs = JSON.parse(c.dataset.jobs);
+            document.querySelectorAll('#jobGroup input').forEach(cb => cb.checked = jobs.includes(cb.value));
+            document.getElementById('cancelEdit').style.display = 'inline';
+            window.scrollTo(0, 0);
+        }
+
+        function resetForm() {
+            document.getElementById('charName').value = '';
+            document.getElementById('editingId').value = '';
+            document.querySelectorAll('input:checked').forEach(cb => cb.checked = false);
+            document.getElementById('cancelEdit').style.display = 'none';
+        }
+
+        function deleteCard(id) { if (confirm("確定刪除此角色？")) { document.getElementById(id).remove(); updateCounts(); saveState(); } }
+
+        function updateCounts() {
+            ['repo', ...teamConfigs.map(t => t.id)].forEach(id => {
+                const el = document.getElementById('count-' + id);
+                const col = document.getElementById(id);
+                if (el && col) {
+                    const cards = col.querySelectorAll('.card');
+                    el.innerText = cards.length;
+
+                    // Update Job Stats
+                    const statsEl = document.getElementById('stats-' + id);
+                    if (statsEl) {
+                        const jobCounts = {};
+                        cards.forEach(c => {
+                            const jobs = JSON.parse(c.dataset.jobs);
+                            jobs.forEach(j => {
+                                jobCounts[j] = (jobCounts[j] || 0) + 1;
+                            });
+                        });
+
+                        const statsHtml = Object.entries(jobCounts)
+                            .map(([job, count]) => `<span style="background:rgba(255,255,255,0.2); padding:1px 4px; border-radius:3px; color: #555; border: 1px solid #ddd;">${job}:${count}</span>`)
+                            .join('');
+                        statsEl.innerHTML = statsHtml || '<span style="opacity:0.5; font-size: 0.9em;">-</span>';
+                    }
+                }
+            });
+        }
+
+        let draggedColId = null;
+        function dragColumn(ev) { draggedColId = ev.target.parentElement.id; }
+        document.getElementById('mainBoard').ondragover = (e) => e.preventDefault();
+        document.getElementById('mainBoard').ondrop = (e) => {
+            const targetCol = e.target.closest('.column');
+            if (targetCol && draggedColId && targetCol.id !== draggedColId) {
+                const fromIdx = teamConfigs.findIndex(t => t.id === draggedColId);
+                const toIdx = teamConfigs.findIndex(t => t.id === targetCol.id);
+                const [movedItem] = teamConfigs.splice(fromIdx, 1);
+                teamConfigs.splice(toIdx, 0, movedItem);
+                saveState();
+                location.reload();
+            }
+        };
+
+        function toggleImport() {
+            const div = document.getElementById('importSection');
+            div.style.display = div.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function processCSV() {
+            const text = document.getElementById('csvInput').value.trim();
+            if (!text) return;
+            const lines = text.split('\n');
+
+            // Skip header if present
+            const startIdx = lines[0].includes('username') ? 1 : 0;
+
+            for (let i = startIdx; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                // Handle possibility of comma in message? standard CSV uses quotes but here simple split might suffice for given example
+                // format: username,message
+                const parts = line.split(',');
+                if (parts.length < 2) continue;
+
+                const name = parts[0].trim();
+                const rawMsg = parts.slice(1).join(',').trim(); // Rejoin in case message has commas
+
+                // Job Mapping
+                let job = rawMsg;
+                if (rawMsg === '99') job = '酒酒';
+                else if (rawMsg === '奶') job = '補';
+                else if (rawMsg === '劍劍') job = '雙劍';
+                // "威威" case or others remain as is
+
+                createCard(name, [job], [], 'repo');
+            }
+
+            document.getElementById('csvInput').value = '';
+            toggleImport();
+            saveState();
+            alert('匯入完成！');
+        }
+
+        function downloadImage() {
+            html2canvas(document.body).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'team-distribution.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            }).catch(err => {
+                console.error('Screenshot failed:', err);
+                alert('截圖失敗，請稍後再試。');
+            });
+        }
+    </script>
+
+</body>
+
+</html>
