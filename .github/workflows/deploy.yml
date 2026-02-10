@@ -35,6 +35,12 @@ jobs:
       - name: Build single-file
         run: npm run build
 
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npx playwright test
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
