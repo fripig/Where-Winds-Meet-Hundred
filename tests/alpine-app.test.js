@@ -390,7 +390,8 @@ describe('拖放功能', () => {
 
     function makeFakeColumnEl(cardRects) {
         const cards = cardRects.map(rect => ({
-            getBoundingClientRect: () => rect
+            getBoundingClientRect: () => rect,
+            style: {}
         }));
         return { querySelectorAll: (sel) => sel === '.card' ? cards : [] };
     }
@@ -464,6 +465,79 @@ describe('拖放功能', () => {
         app.drop(event, 'team1');
 
         expect(app.cards.team1.map(c => c.id)).toEqual(['a', 'new', 'b']);
+    });
+
+    it('showDropIndicator 插入指示線到正確位置', () => {
+        const container = document.createElement('div');
+        const card1 = document.createElement('div');
+        card1.className = 'card';
+        card1.getBoundingClientRect = () => ({ top: 100, height: 40 });
+        const card2 = document.createElement('div');
+        card2.className = 'card';
+        card2.getBoundingClientRect = () => ({ top: 150, height: 40 });
+        container.appendChild(card1);
+        container.appendChild(card2);
+        container.querySelectorAll = (sel) => sel === '.card' ? [card1, card2] : [];
+
+        // Insert before second card (clientY=130, between centers 120 and 170)
+        app.showDropIndicator(container, 130);
+
+        const indicator = container.querySelector('.drop-indicator');
+        expect(indicator).not.toBeNull();
+        // indicator should be before card2
+        const children = Array.from(container.children);
+        expect(children.indexOf(indicator)).toBe(children.indexOf(card2) - 1);
+    });
+
+    it('showDropIndicator 在末尾插入指示線', () => {
+        const container = document.createElement('div');
+        const card1 = document.createElement('div');
+        card1.className = 'card';
+        card1.getBoundingClientRect = () => ({ top: 100, height: 40 });
+        container.appendChild(card1);
+        container.querySelectorAll = (sel) => sel === '.card' ? [card1] : [];
+
+        app.showDropIndicator(container, 999);
+
+        const indicator = container.querySelector('.drop-indicator');
+        expect(indicator).not.toBeNull();
+        expect(container.lastChild).toBe(indicator);
+    });
+
+    it('clearDropIndicator 移除指示線元素', () => {
+        const indicator = document.createElement('div');
+        indicator.className = 'drop-indicator';
+        document.body.appendChild(indicator);
+
+        app.clearDropIndicator();
+
+        expect(document.querySelector('.drop-indicator')).toBeNull();
+    });
+
+    it('clearDropIndicator 無指示線時不報錯', () => {
+        expect(() => app.clearDropIndicator()).not.toThrow();
+    });
+
+    it('showDropIndicator 跳過被拖曳中的卡片', () => {
+        const container = document.createElement('div');
+        const card1 = document.createElement('div');
+        card1.className = 'card';
+        card1.style.opacity = '0.3'; // dragging card
+        card1.getBoundingClientRect = () => ({ top: 100, height: 40 });
+        const card2 = document.createElement('div');
+        card2.className = 'card';
+        card2.getBoundingClientRect = () => ({ top: 150, height: 40 });
+        container.appendChild(card1);
+        container.appendChild(card2);
+        container.querySelectorAll = (sel) => sel === '.card' ? [card1, card2] : [];
+
+        // clientY=90 should insert before card2 (the only visible card)
+        app.showDropIndicator(container, 90);
+
+        const indicator = container.querySelector('.drop-indicator');
+        expect(indicator).not.toBeNull();
+        const children = Array.from(container.children);
+        expect(children.indexOf(indicator)).toBeLessThan(children.indexOf(card2));
     });
 
     it('drop 同欄位內拖曳調整順序', () => {

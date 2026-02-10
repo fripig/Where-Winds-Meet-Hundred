@@ -251,8 +251,39 @@ function teamApp() {
             event.dataTransfer.setData('cardId', cardId);
         },
 
+        dragOver(event) {
+            event.preventDefault();
+            this.showDropIndicator(event.currentTarget, event.clientY);
+        },
+
+        showDropIndicator(columnEl, clientY) {
+            let indicator = document.querySelector('.drop-indicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.className = 'drop-indicator';
+            }
+
+            const visibleCards = Array.from(columnEl.querySelectorAll('.card')).filter(
+                c => c.style.opacity !== '0.3'
+            );
+            const insertIdx = this.getInsertIndex(columnEl, clientY);
+
+            if (insertIdx < visibleCards.length) {
+                columnEl.insertBefore(indicator, visibleCards[insertIdx]);
+            } else {
+                columnEl.appendChild(indicator);
+            }
+        },
+
+        clearDropIndicator() {
+            const indicator = document.querySelector('.drop-indicator');
+            if (indicator) indicator.remove();
+        },
+
         getInsertIndex(columnEl, clientY) {
-            const cards = columnEl.querySelectorAll('.card');
+            const cards = Array.from(columnEl.querySelectorAll('.card')).filter(
+                c => c.style.opacity !== '0.3'
+            );
             for (let i = 0; i < cards.length; i++) {
                 const rect = cards[i].getBoundingClientRect();
                 const centerY = rect.top + rect.height / 2;
@@ -286,6 +317,7 @@ function teamApp() {
                 this.cards[targetColumnId].splice(adjustedIndex, 0, card);
                 this.saveState();
             }
+            this.clearDropIndicator();
         },
 
         // Touch drag and drop
@@ -336,8 +368,13 @@ function teamApp() {
 
                 this.clearDropHighlights();
                 const target = this.getDropTarget(touch.clientX, touch.clientY);
-                if (target && target !== this.touchDragState.originalCard.closest('[data-column]')) {
-                    target.classList.add('drop-hover');
+                if (target) {
+                    if (target !== this.touchDragState.originalCard.closest('[data-column]')) {
+                        target.classList.add('drop-hover');
+                    }
+                    this.showDropIndicator(target, touch.clientY);
+                } else {
+                    this.clearDropIndicator();
                 }
             }
         },
@@ -378,6 +415,7 @@ function teamApp() {
                     this.touchDragClone = null;
                 }
                 this.clearDropHighlights();
+                this.clearDropIndicator();
             }
 
             this.touchDragState = null;

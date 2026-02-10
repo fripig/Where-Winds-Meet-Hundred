@@ -167,6 +167,15 @@
             border: 2px dashed #4caf50;
         }
 
+        .drop-indicator {
+            height: 3px;
+            width: 100%;
+            background: #1a73e8;
+            border-radius: 2px;
+            margin: -2px 0;
+            pointer-events: none;
+        }
+
         .board .card {
             margin-bottom: 8px;
             width: auto;
@@ -439,9 +448,9 @@
         <div class="repository-row">
             <h3 style="margin:0 0 5px 0; font-size:0.9em;">📚 角色庫 <span class="count-badge"
                     style="background:#888" x-text="getColumnCount('repo')">0</span></h3>
-            <div class="repo-scroll-container" 
-                 @drop="drop($event, 'repo')" 
-                 @dragover.prevent
+            <div class="repo-scroll-container"
+                 @drop="drop($event, 'repo')"
+                 @dragover="dragOver($event)"
                  data-column="repo">
                 <template x-for="card in getColumnCards('repo')" :key="card.id">
                     <div class="card"
@@ -467,10 +476,10 @@
 
         <div class="board" :style="'grid-template-columns: repeat(' + visibleTeams.length + ', 1fr)'">
             <template x-for="config in teamConfigs" :key="config.id">
-                <div class="column" 
+                <div class="column"
                      x-show="config.visible"
-                     @drop="drop($event, config.id)" 
-                     @dragover.prevent
+                     @drop="drop($event, config.id)"
+                     @dragover="dragOver($event)"
                      :data-column="config.id">
                     <div class="column-header" style="flex-wrap: wrap;">
                         <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
