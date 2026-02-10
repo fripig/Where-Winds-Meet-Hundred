@@ -36,7 +36,7 @@ jobs:
         run: npm run build
 
       - name: Install Playwright
-        run: npx playwright install --with-deps chromium
+        run: npm install --no-save @playwright/test && npx playwright install --with-deps chromium
 
       - name: Run E2E tests
         run: npx playwright test
