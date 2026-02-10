@@ -384,7 +384,7 @@
                 <div class="form-group" style="flex: 3;">
                     <label>職業 (長紅/陌黃/補綠/他藍)</label>
                     <div class="checkbox-group">
-                        <template x-for="job in availableJobs" :key="job">
+                        <template x-for="(job, index) in availableJobs" :key="index">
                             <label :class="{ 'checked': selectedJobs.includes(job) }">
                                 <input type="checkbox" :value="job" x-model="selectedJobs">
                                 <span x-text="job === '隊長' ? '⭐' + job : job"></span>
@@ -638,8 +638,8 @@
                             }
                         }
                     } else {
-                        // Create new card
-                        const cardId = 'char-' + Date.now() + Math.random().toString(16).slice(2);
+                        // Create new card with unique ID
+                        const cardId = 'char-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
                         if (!this.cards.repo) this.cards.repo = [];
                         this.cards.repo.push({ id: cardId, name, jobs, days });
                     }
@@ -717,7 +717,7 @@
                         else if (rawMsg === '奶') job = '補';
                         else if (rawMsg === '劍劍') job = '雙劍';
 
-                        const cardId = 'char-' + Date.now() + Math.random().toString(16).slice(2);
+                        const cardId = 'char-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11) + '-' + i;
                         this.cards.repo.push({ id: cardId, name, jobs: [job], days: [] });
                     }
 
