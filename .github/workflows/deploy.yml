@@ -16,6 +16,8 @@ concurrency:
 jobs:
   test-build-deploy:
     runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.pw-browsers
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -32,7 +34,7 @@ jobs:
         with:
           path: |
             node_modules
-            ~/.cache/ms-playwright
+            .pw-browsers
           key: deps-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
