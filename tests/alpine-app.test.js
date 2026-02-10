@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { teamApp } from '../src/alpine-app.js';
+const { teamApp } = require('../src/alpine-app.js');
 
 let app;
 

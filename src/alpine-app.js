@@ -384,8 +384,7 @@ function teamApp() {
     };
 }
 
-// Export for testing (Vitest) + browser global
-if (typeof window !== 'undefined') {
-    window.teamApp = teamApp;
+// Export for testing (Vitest), conditional to avoid browser syntax error
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { teamApp };
 }
-export { teamApp };
