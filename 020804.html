@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>百業戰分組排班系統 - 緊湊自動寬度版</title>
+    <script defer src="alpine.min.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" async></script>
     <style>
         body {
@@ -368,70 +369,539 @@
     </style>
 </head>
 
-<body>
+<body x-data="teamApp()">
 
     <div class="container">
         <div class="input-section">
-            <h2 style="margin:0 0 10px 0; font-size: 1.1em;">🛠️ 角色管理 <span id="saveStatus" class="save-hint">●
+            <h2 style="margin:0 0 10px 0; font-size: 1.1em;">🛠️ 角色管理 <span x-show="saveStatus" x-transition class="save-hint">●
                     已自動儲存</span></h2>
             <div class="form-row">
-                <input type="hidden" id="editingId" value="">
                 <div class="form-group" style="flex: 1.5;">
                     <label>角色名稱</label>
-                    <input type="text" id="charName" placeholder="輸入..."
+                    <input type="text" x-model="charName" placeholder="輸入..."
                         style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px;">
                 </div>
                 <div class="form-group" style="flex: 3;">
                     <label>職業 (長紅/陌黃/補綠/他藍)</label>
-                    <div class="checkbox-group" id="jobGroup">
-                        <label><input type="checkbox" value="隊長"><span>⭐隊長</span></label>
-                        <label><input type="checkbox" value="陌刀"><span>陌刀</span></label>
-                        <label><input type="checkbox" value="補"><span>補</span></label>
-                        <label><input type="checkbox" value="玉玉"><span>玉玉</span></label>
-                        <label><input type="checkbox" value="無名"><span>無名</span></label>
-                        <label><input type="checkbox" value="酒酒"><span>酒酒</span></label>
-                        <label><input type="checkbox" value="雙劍"><span>雙劍</span></label>
+                    <div class="checkbox-group">
+                        <template x-for="(job, index) in availableJobs" :key="index">
+                            <label :class="{ 'checked': selectedJobs.includes(job) }">
+                                <input type="checkbox" :value="job" x-model="selectedJobs">
+                                <span x-text="job === '隊長' ? '⭐' + job : job"></span>
+                            </label>
+                        </template>
                     </div>
                 </div>
                 <div class="form-group">
                     <label>場次</label>
-                    <div class="checkbox-group" id="dayGroup">
-                        <label><input type="checkbox" value="六"><span>六</span></label>
-                        <label><input type="checkbox" value="日"><span>日</span></label>
+                    <div class="checkbox-group">
+                        <template x-for="day in ['六', '日']" :key="day">
+                            <label :class="{ 'checked': selectedDays.includes(day) }">
+                                <input type="checkbox" :value="day" x-model="selectedDays">
+                                <span x-text="day"></span>
+                            </label>
+                        </template>
                     </div>
                 </div>
-                <button id="addChar" onclick="handleNewOrUpdateCharacter()">儲存</button>
-                <button id="cancelEdit" onclick="resetForm()" style="display:none;">X</button>
-                <button onclick="toggleImport()" class="action-btn" style="background: #34a853;">📥 匯入</button>
-                <button onclick="downloadImage()" class="action-btn" style="background: #555;">📷 存圖</button>
-                <button onclick="toggleSettings()" class="action-btn" style="background: #607d8b;">⚙️ 設定</button>
+                <button id="addChar" @click="handleNewOrUpdateCharacter()">儲存</button>
+                <button x-show="editingId" @click="resetForm()">X</button>
+                <button @click="showImport = !showImport" class="action-btn" style="background: #34a853;">📥 匯入</button>
+                <button @click="downloadImage()" class="action-btn" style="background: #555;">📷 存圖</button>
+                <button @click="showSettings = !showSettings" class="action-btn" style="background: #607d8b;">⚙️ 設定</button>
             </div>
 
-            <div id="importSection"
-                style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-                <textarea id="csvInput" placeholder="貼上 CSV 格式 (username,message)..."
+            <div x-show="showImport" x-transition
+                style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                <textarea x-model="csvInput" placeholder="貼上 CSV 格式 (username,message)..."
                     style="width: 100%; height: 100px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 16px; box-sizing: border-box;"></textarea>
-                <button onclick="processCSV()"
+                <button @click="processCSV()"
                     style="margin-top: 8px; background: #1a73e8; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.9em;">確認匯入</button>
             </div>
 
-            <div id="settingsSection"
-                style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+            <div x-show="showSettings" x-transition
+                style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
                 <h4 style="margin-top: 0; margin-bottom: 10px;">顯示隊伍</h4>
-                <div class="checkbox-group" id="teamVisibilityGroup"></div>
+                <div class="checkbox-group">
+                    <template x-for="config in teamConfigs" :key="config.id">
+                        <label :class="{ 'checked': config.visible }">
+                            <input type="checkbox" :value="config.id" x-model="config.visible" @change="updateTeamVisibility()">
+                            <span x-text="config.name"></span>
+                        </label>
+                    </template>
+                </div>
             </div>
         </div>
 
         <div class="repository-row">
-            <h3 style="margin:0 0 5px 0; font-size:0.9em;">📚 角色庫 <span class="count-badge" id="count-repo"
-                    style="background:#888">0</span></h3>
-            <div id="repo" class="repo-scroll-container"></div>
+            <h3 style="margin:0 0 5px 0; font-size:0.9em;">📚 角色庫 <span class="count-badge"
+                    style="background:#888" x-text="getColumnCount('repo')">0</span></h3>
+            <div class="repo-scroll-container" 
+                 @drop="drop($event, 'repo')" 
+                 @dragover.prevent
+                 data-column="repo">
+                <template x-for="card in getColumnCards('repo')" :key="card.id">
+                    <div class="card" 
+                         draggable="true" 
+                         :data-card-id="card.id"
+                         @dragstart="dragStart($event, card.id)"
+                         @touchstart="touchStart($event, card.id)"
+                         @touchmove="touchMove($event)"
+                         @touchend="touchEnd($event)">
+                        <div class="card-btns">
+                            <button class="icon-btn" @click="startEdit(card.id)">✏️</button>
+                            <button class="icon-btn" @click="deleteCard(card.id)">✕</button>
+                        </div>
+                        <strong x-text="card.name"></strong><br>
+                        <template x-for="job in card.jobs" :key="job">
+                            <span class="job-tag" :class="getJobClass(job)" x-text="job"></span>
+                        </template>
+                    </div>
+                </template>
+            </div>
         </div>
 
-        <div class="board" id="mainBoard"></div>
+        <div class="board" :style="'grid-template-columns: repeat(' + visibleTeams.length + ', 1fr)'">
+            <template x-for="config in teamConfigs" :key="config.id">
+                <div class="column" 
+                     x-show="config.visible"
+                     @drop="drop($event, config.id)" 
+                     @dragover.prevent
+                     :data-column="config.id">
+                    <div class="column-header" style="flex-wrap: wrap;">
+                        <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                            <input class="column-title" x-model="config.name" @change="saveState()">
+                            <div class="header-actions">
+                                <span class="count-badge" x-text="getColumnCount(config.id)">0</span>
+                            </div>
+                        </div>
+                        <div style="width:100%; font-size:0.75em; color:#ddd; margin-top:4px; display:flex; flex-wrap:wrap; gap:4px;">
+                            <template x-for="(count, job) in getJobStats(config.id)" :key="job">
+                                <span style="background:rgba(255,255,255,0.2); padding:1px 4px; border-radius:3px; color: #555; border: 1px solid #ddd;">
+                                    <span x-text="job + ':' + count"></span>
+                                </span>
+                            </template>
+                            <span x-show="Object.keys(getJobStats(config.id)).length === 0" style="opacity:0.5; font-size: 0.9em;">-</span>
+                        </div>
+                    </div>
+                    <template x-for="card in getColumnCards(config.id)" :key="card.id">
+                        <div class="card" 
+                             draggable="true" 
+                             :data-card-id="card.id"
+                             @dragstart="dragStart($event, card.id)"
+                             @touchstart="touchStart($event, card.id)"
+                             @touchmove="touchMove($event)"
+                             @touchend="touchEnd($event)">
+                            <div class="card-btns">
+                                <button class="icon-btn" @click="startEdit(card.id)">✏️</button>
+                                <button class="icon-btn" @click="deleteCard(card.id)">✕</button>
+                            </div>
+                            <strong x-text="card.name"></strong><br>
+                            <template x-for="job in card.jobs" :key="job">
+                                <span class="job-tag" :class="getJobClass(job)" x-text="job"></span>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
     </div>
 
-    <script type="module" src="src/app.js"></script>
+    <script>
+        function teamApp() {
+            return {
+                storageKey: 'teamData_v2',
+                teamConfigs: [
+                    { id: 'team1', name: '🚩 第一隊', visible: true },
+                    { id: 'team2', name: '🚩 第二隊', visible: true },
+                    { id: 'team3', name: '🚩 第三隊', visible: true },
+                    { id: 'teamMobile', name: '⚡ 機動隊', visible: true }
+                ],
+                cards: {},
+                charName: '',
+                selectedJobs: [],
+                selectedDays: [],
+                editingId: null,
+                saveStatus: false,
+                showImport: false,
+                showSettings: false,
+                csvInput: '',
+                availableJobs: ['隊長', '陌刀', '補', '玉玉', '無名', '酒酒', '雙劍'],
+                
+                // Touch drag state
+                touchDragState: null,
+                touchDragClone: null,
+
+                init() {
+                    this.loadState();
+                    this.$watch('teamConfigs', () => this.saveState(), { deep: true });
+                },
+
+                get visibleTeams() {
+                    return this.teamConfigs.filter(t => t.visible !== false);
+                },
+
+                safeGetStorage(key) {
+                    try {
+                        const data = localStorage.getItem(key);
+                        return data ? JSON.parse(data) : null;
+                    } catch (e) {
+                        console.warn('localStorage read failed:', e);
+                        return null;
+                    }
+                },
+
+                safeSetStorage(key, value) {
+                    try {
+                        localStorage.setItem(key, JSON.stringify(value));
+                    } catch (e) {
+                        console.warn('localStorage write failed:', e);
+                    }
+                },
+
+                loadState() {
+                    const savedData = this.safeGetStorage(this.storageKey);
+                    if (savedData) {
+                        if (savedData.configs) {
+                            this.teamConfigs = savedData.configs.map(c => ({
+                                ...c,
+                                visible: c.visible !== false
+                            }));
+                        }
+                        if (savedData.data) {
+                            this.cards = savedData.data;
+                        }
+                    } else {
+                        // Initialize with empty columns
+                        this.cards = {
+                            repo: [],
+                            team1: [],
+                            team2: [],
+                            team3: [],
+                            teamMobile: []
+                        };
+                    }
+                },
+
+                saveState() {
+                    const configs = this.teamConfigs.map(t => ({
+                        id: t.id,
+                        name: t.name,
+                        visible: t.visible
+                    }));
+                    this.safeSetStorage(this.storageKey, { data: this.cards, configs });
+                    this.saveStatus = true;
+                    setTimeout(() => { this.saveStatus = false; }, 1500);
+                },
+
+                getColumnCards(columnId) {
+                    return this.cards[columnId] || [];
+                },
+
+                getColumnCount(columnId) {
+                    return this.getColumnCards(columnId).length;
+                },
+
+                getJobStats(columnId) {
+                    const cards = this.getColumnCards(columnId);
+                    const jobCounts = {};
+                    cards.forEach(card => {
+                        card.jobs.forEach(job => {
+                            jobCounts[job] = (jobCounts[job] || 0) + 1;
+                        });
+                    });
+                    return jobCounts;
+                },
+
+                getJobClass(job) {
+                    if (job === '隊長') return 'job-red';
+                    if (job === '陌刀') return 'job-yellow';
+                    if (job === '補') return 'job-green';
+                    return 'job-blue';
+                },
+
+                handleNewOrUpdateCharacter() {
+                    const name = this.charName.trim();
+                    const jobs = [...this.selectedJobs];
+                    const days = [...this.selectedDays];
+                    
+                    if (!name || jobs.length === 0) return;
+
+                    if (this.editingId) {
+                        // Update existing card
+                        let found = false;
+                        for (const colId in this.cards) {
+                            const idx = this.cards[colId].findIndex(c => c.id === this.editingId);
+                            if (idx !== -1) {
+                                this.cards[colId][idx] = { id: this.editingId, name, jobs, days };
+                                found = true;
+                                break;
+                            }
+                        }
+                    } else {
+                        // Create new card with unique ID
+                        const cardId = 'char-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
+                        if (!this.cards.repo) this.cards.repo = [];
+                        this.cards.repo.push({ id: cardId, name, jobs, days });
+                    }
+                    
+                    this.resetForm();
+                    this.saveState();
+                },
+
+                startEdit(cardId) {
+                    let card = null;
+                    for (const colId in this.cards) {
+                        card = this.cards[colId].find(c => c.id === cardId);
+                        if (card) break;
+                    }
+                    
+                    if (card) {
+                        this.charName = card.name;
+                        this.selectedJobs = [...card.jobs];
+                        this.selectedDays = [...card.days];
+                        this.editingId = cardId;
+                        
+                        // Scroll to form
+                        setTimeout(() => {
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }, 100);
+                    }
+                },
+
+                resetForm() {
+                    this.charName = '';
+                    this.selectedJobs = [];
+                    this.selectedDays = [];
+                    this.editingId = null;
+                },
+
+                deleteCard(cardId) {
+                    if (confirm("確定刪除此角色？")) {
+                        for (const colId in this.cards) {
+                            const idx = this.cards[colId].findIndex(c => c.id === cardId);
+                            if (idx !== -1) {
+                                this.cards[colId].splice(idx, 1);
+                                this.saveState();
+                                break;
+                            }
+                        }
+                    }
+                },
+
+                updateTeamVisibility() {
+                    this.saveState();
+                },
+
+                processCSV() {
+                    const text = this.csvInput.trim();
+                    if (!text) return;
+                    
+                    const lines = text.split('\n');
+                    const startIdx = lines[0].includes('username') ? 1 : 0;
+
+                    if (!this.cards.repo) this.cards.repo = [];
+                    
+                    for (let i = startIdx; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+
+                        const parts = line.split(',');
+                        if (parts.length < 2) continue;
+
+                        const name = parts[0].trim();
+                        let rawMsg = parts.slice(1).join(',').trim();
+
+                        // Job mapping
+                        let job = rawMsg;
+                        if (rawMsg === '99') job = '酒酒';
+                        else if (rawMsg === '奶') job = '補';
+                        else if (rawMsg === '劍劍') job = '雙劍';
+
+                        const cardId = 'char-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11) + '-' + i;
+                        this.cards.repo.push({ id: cardId, name, jobs: [job], days: [] });
+                    }
+
+                    this.csvInput = '';
+                    this.showImport = false;
+                    this.saveState();
+                    alert('匯入完成！');
+                },
+
+                downloadImage() {
+                    if (typeof html2canvas === 'undefined') {
+                        alert('截圖功能載入中，請稍後再試。');
+                        return;
+                    }
+                    html2canvas(document.body, { scale: 1 }).then(canvas => {
+                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                        if (isIOS && navigator.share) {
+                            canvas.toBlob(blob => {
+                                const file = new File([blob], 'team-distribution.png', { type: 'image/png' });
+                                navigator.share({ files: [file] }).catch(() => {
+                                    window.open(canvas.toDataURL(), '_blank');
+                                });
+                            });
+                        } else if (isIOS) {
+                            window.open(canvas.toDataURL(), '_blank');
+                        } else {
+                            const link = document.createElement('a');
+                            link.download = 'team-distribution.png';
+                            link.href = canvas.toDataURL();
+                            link.click();
+                        }
+                    }).catch(err => {
+                        console.error('Screenshot failed:', err);
+                        alert('截圖失敗，請稍後再試。');
+                    });
+                },
+
+                // Drag and Drop
+                dragStart(event, cardId) {
+                    event.dataTransfer.setData('cardId', cardId);
+                },
+
+                drop(event, targetColumnId) {
+                    event.preventDefault();
+                    const cardId = event.dataTransfer.getData('cardId');
+                    if (!cardId) return;
+
+                    // Find and remove card from source column
+                    let card = null;
+                    for (const colId in this.cards) {
+                        const idx = this.cards[colId].findIndex(c => c.id === cardId);
+                        if (idx !== -1) {
+                            card = this.cards[colId].splice(idx, 1)[0];
+                            break;
+                        }
+                    }
+
+                    // Add to target column
+                    if (card) {
+                        if (!this.cards[targetColumnId]) this.cards[targetColumnId] = [];
+                        this.cards[targetColumnId].push(card);
+                        this.saveState();
+                    }
+                },
+
+                // Touch drag and drop
+                touchStart(event, cardId) {
+                    // Don't interfere with button taps
+                    if (event.target.closest('.icon-btn')) return;
+
+                    const touch = event.touches[0];
+                    const card = event.currentTarget;
+                    const rect = card.getBoundingClientRect();
+                    
+                    this.touchDragState = {
+                        cardId: cardId,
+                        startX: touch.clientX,
+                        startY: touch.clientY,
+                        isDragging: false,
+                        offsetX: touch.clientX - rect.left,
+                        offsetY: touch.clientY - rect.top,
+                        originalCard: card
+                    };
+                },
+
+                touchMove(event) {
+                    if (!this.touchDragState) return;
+                    
+                    const touch = event.touches[0];
+                    const dx = touch.clientX - this.touchDragState.startX;
+                    const dy = touch.clientY - this.touchDragState.startY;
+
+                    // Require minimum movement to start drag
+                    if (!this.touchDragState.isDragging) {
+                        if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+                        this.touchDragState.isDragging = true;
+
+                        // Create visual clone
+                        const rect = this.touchDragState.originalCard.getBoundingClientRect();
+                        this.touchDragClone = this.touchDragState.originalCard.cloneNode(true);
+                        this.touchDragClone.className = 'card dragging';
+                        this.touchDragClone.style.width = rect.width + 'px';
+                        this.touchDragClone.style.left = rect.left + 'px';
+                        this.touchDragClone.style.top = rect.top + 'px';
+                        document.body.appendChild(this.touchDragClone);
+
+                        // Dim original
+                        this.touchDragState.originalCard.style.opacity = '0.3';
+                    }
+
+                    if (this.touchDragState.isDragging) {
+                        event.preventDefault();
+                        this.touchDragClone.style.left = (touch.clientX - this.touchDragState.offsetX) + 'px';
+                        this.touchDragClone.style.top = (touch.clientY - this.touchDragState.offsetY) + 'px';
+
+                        // Highlight drop target
+                        this.clearDropHighlights();
+                        const target = this.getDropTarget(touch.clientX, touch.clientY);
+                        if (target && target !== this.touchDragState.originalCard.closest('[data-column]')) {
+                            target.classList.add('drop-hover');
+                        }
+                    }
+                },
+
+                touchEnd(event) {
+                    if (!this.touchDragState) return;
+
+                    if (this.touchDragState.isDragging) {
+                        const touch = event.changedTouches[0];
+                        const target = this.getDropTarget(touch.clientX, touch.clientY);
+
+                        if (target) {
+                            const targetColumnId = target.getAttribute('data-column');
+                            if (targetColumnId) {
+                                // Move card between columns
+                                let card = null;
+                                for (const colId in this.cards) {
+                                    const idx = this.cards[colId].findIndex(c => c.id === this.touchDragState.cardId);
+                                    if (idx !== -1) {
+                                        card = this.cards[colId].splice(idx, 1)[0];
+                                        break;
+                                    }
+                                }
+                                if (card) {
+                                    if (!this.cards[targetColumnId]) this.cards[targetColumnId] = [];
+                                    this.cards[targetColumnId].push(card);
+                                    this.saveState();
+                                }
+                            }
+                        }
+
+                        // Cleanup
+                        this.touchDragState.originalCard.style.opacity = '';
+                        if (this.touchDragClone) {
+                            this.touchDragClone.remove();
+                            this.touchDragClone = null;
+                        }
+                        this.clearDropHighlights();
+                    }
+
+                    this.touchDragState = null;
+                },
+
+                getDropTarget(x, y) {
+                    // Temporarily hide the clone so elementFromPoint can see through it
+                    if (this.touchDragClone) this.touchDragClone.style.display = 'none';
+                    let el = document.elementFromPoint(x, y);
+                    if (this.touchDragClone) this.touchDragClone.style.display = '';
+
+                    // Find the closest drop target (column or repo)
+                    while (el && !el.hasAttribute('data-column')) {
+                        el = el.parentElement;
+                    }
+                    return el;
+                },
+
+                clearDropHighlights() {
+                    document.querySelectorAll('.drop-hover').forEach(el => {
+                        el.classList.remove('drop-hover');
+                    });
+                }
+            };
+        }
+    </script>
 
 </body>
 
