@@ -18,6 +18,9 @@ function teamApp() {
         csvInput: '',
         availableJobs: ['隊長', '陌刀', '補', '玉玉', '無名', '酒酒', '雙劍', '雙刀'],
 
+        // Move menu state
+        moveMenuCardId: null,
+
         // Touch drag state
         touchDragState: null,
         touchDragClone: null,
@@ -253,6 +256,51 @@ function teamApp() {
                 console.error('Screenshot failed:', err);
                 alert('截圖失敗，請稍後再試。');
             });
+        },
+
+        // Move menu
+        toggleMoveMenu(cardId) {
+            this.moveMenuCardId = this.moveMenuCardId === cardId ? null : cardId;
+        },
+
+        getMoveTargets(cardId) {
+            // Find which column this card is in
+            let sourceColId = null;
+            for (const colId in this.cards) {
+                if (this.cards[colId].some(c => c.id === cardId)) {
+                    sourceColId = colId;
+                    break;
+                }
+            }
+
+            const targets = [];
+            if (sourceColId !== 'repo') {
+                targets.push({ id: 'repo', name: '📚 角色庫' });
+            }
+            for (const config of this.teamConfigs) {
+                if (config.id !== sourceColId) {
+                    targets.push({ id: config.id, name: config.name });
+                }
+            }
+            return targets;
+        },
+
+        moveCardTo(cardId, targetColumnId) {
+            let card = null;
+            for (const colId in this.cards) {
+                const idx = this.cards[colId].findIndex(c => c.id === cardId);
+                if (idx !== -1) {
+                    card = this.cards[colId].splice(idx, 1)[0];
+                    break;
+                }
+            }
+            if (card) {
+                if (!this.cards[targetColumnId]) this.cards[targetColumnId] = [];
+                this.cards[targetColumnId].push(card);
+                this.saveState();
+                this.moveMenuCardId = null;
+                this.animateCardDrop(cardId);
+            }
         },
 
         // Drag and Drop

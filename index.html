@@ -329,6 +329,37 @@
             white-space: nowrap;
         }
 
+        /* 移動選單 */
+        .move-menu {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            padding: 4px 0;
+            min-width: 120px;
+        }
+
+        .move-menu button {
+            display: block;
+            width: 100%;
+            padding: 8px 12px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+
+        @media (hover: hover) {
+            .move-menu button:hover {
+                background: #e8f0fe;
+            }
+        }
+
         /* ===== RWD: 手機版面 ===== */
         @media (max-width: 768px) {
             body {
@@ -478,8 +509,14 @@
                          @touchmove="touchMove($event)"
                          @touchend="touchEnd($event)">
                         <div class="card-btns">
+                            <button class="icon-btn" @click="toggleMoveMenu(card.id)">⤴</button>
                             <button class="icon-btn" @click="startEdit(card.id)">✏️</button>
                             <button class="icon-btn" @click="deleteCard(card.id)">✕</button>
+                        </div>
+                        <div class="move-menu" x-show="moveMenuCardId === card.id" @click.outside="moveMenuCardId = null">
+                            <template x-for="col in getMoveTargets(card.id)" :key="col.id">
+                                <button @click="moveCardTo(card.id, col.id)" x-text="col.name"></button>
+                            </template>
                         </div>
                         <strong x-text="card.name"></strong><br>
                         <template x-for="job in card.jobs" :key="job">
@@ -523,8 +560,14 @@
                              @touchmove="touchMove($event)"
                              @touchend="touchEnd($event)">
                             <div class="card-btns">
+                                <button class="icon-btn" @click="toggleMoveMenu(card.id)">⤴</button>
                                 <button class="icon-btn" @click="startEdit(card.id)">✏️</button>
                                 <button class="icon-btn" @click="deleteCard(card.id)">✕</button>
+                            </div>
+                            <div class="move-menu" x-show="moveMenuCardId === card.id" @click.outside="moveMenuCardId = null">
+                                <template x-for="col in getMoveTargets(card.id)" :key="col.id">
+                                    <button @click="moveCardTo(card.id, col.id)" x-text="col.name"></button>
+                                </template>
                             </div>
                             <strong x-text="card.name"></strong><br>
                             <template x-for="job in card.jobs" :key="job">
