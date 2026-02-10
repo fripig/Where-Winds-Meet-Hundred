@@ -480,7 +480,7 @@
                         </div>
                         <div style="width:100%; font-size:0.75em; color:#ddd; margin-top:4px; display:flex; flex-wrap:wrap; gap:4px;">
                             <template x-for="(count, job) in getJobStats(config.id)" :key="job">
-                                <span style="background:rgba(255,255,255,0.2); padding:1px 4px; border-radius:3px; color: #555; border: 1px solid #ddd;">
+                                <span style="background:rgba(255,255,255,0.25); padding:1px 4px; border-radius:3px; color: #fff; border: 1px solid rgba(255,255,255,0.4);">
                                     <span x-text="job + ':' + count"></span>
                                 </span>
                             </template>
