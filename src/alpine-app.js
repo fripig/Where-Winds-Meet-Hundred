@@ -16,7 +16,7 @@ function teamApp() {
         showImport: false,
         showSettings: false,
         csvInput: '',
-        availableJobs: ['隊長', '陌刀', '補', '玉玉', '無名', '酒酒', '雙劍'],
+        availableJobs: ['隊長', '陌刀', '補', '玉玉', '無名', '酒酒', '雙劍', '雙刀'],
 
         // Touch drag state
         touchDragState: null,
