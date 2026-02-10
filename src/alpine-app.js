@@ -24,7 +24,7 @@ function teamApp() {
 
         init() {
             this.loadState();
-            this.$watch('teamConfigs', () => this.saveState(), { deep: true });
+            this.$watch('teamConfigs', () => this.saveState());
         },
 
         get visibleTeams() {

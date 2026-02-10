@@ -270,7 +270,7 @@ describe('狀態持久化', () => {
         app.init();
 
         expect(loadSpy).toHaveBeenCalled();
-        expect(app.$watch).toHaveBeenCalledWith('teamConfigs', expect.any(Function), { deep: true });
+        expect(app.$watch).toHaveBeenCalledWith('teamConfigs', expect.any(Function));
     });
 });
 

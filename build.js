@@ -24,15 +24,16 @@ const appJsBrowser = appJs.replace(
 // 1. Remove Alpine.js <script defer> from <head> (defer is ignored on inline scripts)
 html = html.replace(
     '    <script defer src="alpine.min.js"></script>\n',
-    ''
+    () => ''
 );
 
 // 2. Replace app JS with: app JS inline + Alpine.js inline (order matters!)
 //    - App JS first: registers document.addEventListener('alpine:init', ...) listener
 //    - Alpine.js second: starts up, fires 'alpine:init', our listener calls Alpine.data()
+//    NOTE: use function replacement to avoid $$ special patterns in String.replace()
 html = html.replace(
     '<script src="src/alpine-app.js"></script>',
-    '<script>\n' + appJsBrowser + '\n    </script>\n    <script>\n' + alpineJs + '\n    </script>'
+    () => '<script>\n' + appJsBrowser + '\n    </script>\n    <script>\n' + alpineJs + '\n    </script>'
 );
 
 // Write output
