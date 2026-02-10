@@ -126,6 +126,21 @@
             touch-action: none;
         }
 
+        @keyframes card-drop {
+            from {
+                transform: scale(1.05);
+                background: #e3f0ff;
+            }
+            to {
+                transform: scale(1);
+                background: white;
+            }
+        }
+
+        .card.just-dropped {
+            animation: card-drop 0.4s ease-out;
+        }
+
         .card.dragging {
             opacity: 0.8;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);

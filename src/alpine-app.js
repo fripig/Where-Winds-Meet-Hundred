@@ -73,6 +73,15 @@ function teamApp() {
             }
         },
 
+        animateCardDrop(cardId) {
+            setTimeout(() => {
+                const el = document.querySelector(`[data-card-id="${cardId}"]`);
+                if (!el) return;
+                el.classList.add('just-dropped');
+                el.addEventListener('animationend', () => el.classList.remove('just-dropped'), { once: true });
+            }, 0);
+        },
+
         saveState() {
             const configs = this.teamConfigs.map(t => ({
                 id: t.id,
@@ -316,6 +325,7 @@ function teamApp() {
                 const adjustedIndex = Math.min(insertIndex, this.cards[targetColumnId].length);
                 this.cards[targetColumnId].splice(adjustedIndex, 0, card);
                 this.saveState();
+                this.animateCardDrop(cardId);
             }
             this.clearDropIndicator();
         },
@@ -405,6 +415,7 @@ function teamApp() {
                             const adjustedIndex = Math.min(insertIndex, this.cards[targetColumnId].length);
                             this.cards[targetColumnId].splice(adjustedIndex, 0, card);
                             this.saveState();
+                            this.animateCardDrop(this.touchDragState.cardId);
                         }
                     }
                 }
