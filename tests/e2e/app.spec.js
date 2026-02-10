@@ -20,6 +20,19 @@ async function loadApp(page) {
   return errors;
 }
 
+// Helper: select the first job by clicking its visible <label>
+// (the <input> inside has display:none, so we click the label)
+async function selectFirstJob(page) {
+  await page.locator('.checkbox-group label').filter({ has: page.locator('input[x-model="selectedJobs"]') }).first().click();
+}
+
+// Helper: create a character with given name and first job
+async function createCharacter(page, name) {
+  await page.fill('input[x-model="charName"]', name);
+  await selectFirstJob(page);
+  await page.click('#addChar');
+}
+
 // ---------- 1. App initialization ----------
 test.describe('App initialization', () => {
   test('page loads without console errors', async ({ page }) => {
@@ -56,15 +69,7 @@ test.describe('Character CRUD', () => {
   });
 
   test('create a character and see it in repository', async ({ page }) => {
-    // Fill name
-    await page.fill('input[x-model="charName"]', '測試角色');
-
-    // Select a job (first checkbox in the job group)
-    const jobCheckbox = page.locator('.checkbox-group input[x-model="selectedJobs"]').first();
-    await jobCheckbox.check({ force: true });
-
-    // Click save
-    await page.click('#addChar');
+    await createCharacter(page, '測試角色');
 
     // Character should appear in repo
     const repoCards = page.locator('.repository-row .card');
@@ -73,10 +78,7 @@ test.describe('Character CRUD', () => {
   });
 
   test('edit a character', async ({ page }) => {
-    // Create a character first
-    await page.fill('input[x-model="charName"]', '原始名稱');
-    await page.locator('.checkbox-group input[x-model="selectedJobs"]').first().check({ force: true });
-    await page.click('#addChar');
+    await createCharacter(page, '原始名稱');
 
     // Click edit button on the card
     await page.locator('.repository-row .card .icon-btn').first().click();
@@ -93,10 +95,7 @@ test.describe('Character CRUD', () => {
   });
 
   test('delete a character', async ({ page }) => {
-    // Create a character
-    await page.fill('input[x-model="charName"]', '要刪除的角色');
-    await page.locator('.checkbox-group input[x-model="selectedJobs"]').first().check({ force: true });
-    await page.click('#addChar');
+    await createCharacter(page, '要刪除的角色');
     await expect(page.locator('.repository-row .card')).toHaveCount(1);
 
     // Accept the confirm dialog
@@ -121,10 +120,7 @@ test.describe('localStorage persistence', () => {
       return el && (el.__x !== undefined || el._x_dataStack !== undefined);
     }, { timeout: 5000 });
 
-    // Create a character
-    await page.fill('input[x-model="charName"]', '持久角色');
-    await page.locator('.checkbox-group input[x-model="selectedJobs"]').first().check({ force: true });
-    await page.click('#addChar');
+    await createCharacter(page, '持久角色');
     await expect(page.locator('.repository-row .card')).toHaveCount(1);
 
     // Reload
@@ -159,9 +155,9 @@ test.describe('Team settings', () => {
     // Open settings
     await page.click('button:has-text("設定")');
 
-    // Uncheck first team checkbox in settings panel
-    const settingsCheckbox = page.locator('div[x-show="showSettings"] input[type="checkbox"]').first();
-    await settingsCheckbox.uncheck({ force: true });
+    // Uncheck first team by clicking its visible label (input is display:none)
+    const settingsLabel = page.locator('div[x-show="showSettings"] label').filter({ has: page.locator('input[type="checkbox"]') }).first();
+    await settingsLabel.click();
 
     // One fewer visible team column
     const visibleColumns = page.locator('.board > .column:visible');
