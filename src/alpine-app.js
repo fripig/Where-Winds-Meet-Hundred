@@ -384,6 +384,13 @@ function teamApp() {
     };
 }
 
+// Register as Alpine.data component (works for both external <script defer> and inline)
+if (typeof document !== 'undefined') {
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('teamApp', teamApp);
+    });
+}
+
 // Export for testing (Vitest), conditional to avoid browser syntax error
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { teamApp };
