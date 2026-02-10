@@ -444,10 +444,11 @@
                  @dragover.prevent
                  data-column="repo">
                 <template x-for="card in getColumnCards('repo')" :key="card.id">
-                    <div class="card" 
-                         draggable="true" 
+                    <div class="card"
+                         draggable="true"
                          :data-card-id="card.id"
                          @dragstart="dragStart($event, card.id)"
+                         @dragover.prevent
                          @touchstart="touchStart($event, card.id)"
                          @touchmove="touchMove($event)"
                          @touchend="touchEnd($event)">
@@ -488,10 +489,11 @@
                         </div>
                     </div>
                     <template x-for="card in getColumnCards(config.id)" :key="card.id">
-                        <div class="card" 
-                             draggable="true" 
+                        <div class="card"
+                             draggable="true"
                              :data-card-id="card.id"
                              @dragstart="dragStart($event, card.id)"
+                             @dragover.prevent
                              @touchstart="touchStart($event, card.id)"
                              @touchmove="touchMove($event)"
                              @touchend="touchEnd($event)">

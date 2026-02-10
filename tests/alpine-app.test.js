@@ -379,14 +379,26 @@ describe('表單操作', () => {
 
 // ===== 拖放功能 =====
 describe('拖放功能', () => {
+    function makeDropEvent(cardId, clientY = 9999) {
+        return {
+            preventDefault: vi.fn(),
+            clientY,
+            dataTransfer: { getData: () => cardId },
+            currentTarget: makeFakeColumnEl([])
+        };
+    }
+
+    function makeFakeColumnEl(cardRects) {
+        const cards = cardRects.map(rect => ({
+            getBoundingClientRect: () => rect
+        }));
+        return { querySelectorAll: (sel) => sel === '.card' ? cards : [] };
+    }
+
     it('drop 將卡片從來源欄位移到目標欄位', () => {
         app.cards.repo.push({ id: 'drag-me', name: '拖拽', jobs: ['陌刀'], days: [] });
 
-        const event = {
-            preventDefault: vi.fn(),
-            dataTransfer: { getData: () => 'drag-me' }
-        };
-
+        const event = makeDropEvent('drag-me');
         app.drop(event, 'team1');
 
         expect(app.cards.repo).toHaveLength(0);
@@ -395,13 +407,86 @@ describe('拖放功能', () => {
     });
 
     it('drop 無效 cardId 不執行', () => {
+        const event = makeDropEvent('');
+        app.drop(event, 'team1');
+
+        expect(app.cards.team1).toHaveLength(0);
+    });
+
+    it('getInsertIndex 在所有卡片之前插入', () => {
+        const columnEl = makeFakeColumnEl([
+            { top: 100, height: 40 },
+            { top: 150, height: 40 }
+        ]);
+        expect(app.getInsertIndex(columnEl, 90)).toBe(0);
+    });
+
+    it('getInsertIndex 在兩張卡片之間插入', () => {
+        const columnEl = makeFakeColumnEl([
+            { top: 100, height: 40 },
+            { top: 150, height: 40 }
+        ]);
+        // clientY=130 is after center of first card (120) but before center of second (170)
+        expect(app.getInsertIndex(columnEl, 130)).toBe(1);
+    });
+
+    it('getInsertIndex 在所有卡片之後插入', () => {
+        const columnEl = makeFakeColumnEl([
+            { top: 100, height: 40 },
+            { top: 150, height: 40 }
+        ]);
+        expect(app.getInsertIndex(columnEl, 999)).toBe(2);
+    });
+
+    it('getInsertIndex 空欄位回傳 0', () => {
+        const columnEl = makeFakeColumnEl([]);
+        expect(app.getInsertIndex(columnEl, 100)).toBe(0);
+    });
+
+    it('drop 插入到指定位置而非末尾', () => {
+        app.cards.team1.push(
+            { id: 'a', name: 'A', jobs: ['補'], days: [] },
+            { id: 'b', name: 'B', jobs: ['補'], days: [] }
+        );
+        app.cards.repo.push({ id: 'new', name: 'New', jobs: ['陌刀'], days: [] });
+
+        // Simulate dropping between card A (top:100,h:40,center:120) and card B (top:150,h:40,center:170)
         const event = {
             preventDefault: vi.fn(),
-            dataTransfer: { getData: () => '' }
+            clientY: 130,
+            dataTransfer: { getData: () => 'new' },
+            currentTarget: makeFakeColumnEl([
+                { top: 100, height: 40 },
+                { top: 150, height: 40 }
+            ])
         };
 
         app.drop(event, 'team1');
 
-        expect(app.cards.team1).toHaveLength(0);
+        expect(app.cards.team1.map(c => c.id)).toEqual(['a', 'new', 'b']);
+    });
+
+    it('drop 同欄位內拖曳調整順序', () => {
+        app.cards.team1.push(
+            { id: 'a', name: 'A', jobs: ['補'], days: [] },
+            { id: 'b', name: 'B', jobs: ['陌刀'], days: [] },
+            { id: 'c', name: 'C', jobs: ['隊長'], days: [] }
+        );
+
+        // Drag card 'c' to before card 'a' (drop at top, Y=50)
+        const event = {
+            preventDefault: vi.fn(),
+            clientY: 50,
+            dataTransfer: { getData: () => 'c' },
+            currentTarget: makeFakeColumnEl([
+                { top: 100, height: 40 },
+                { top: 150, height: 40 },
+                { top: 200, height: 40 }
+            ])
+        };
+
+        app.drop(event, 'team1');
+
+        expect(app.cards.team1.map(c => c.id)).toEqual(['c', 'a', 'b']);
     });
 });

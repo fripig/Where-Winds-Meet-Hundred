@@ -251,10 +251,23 @@ function teamApp() {
             event.dataTransfer.setData('cardId', cardId);
         },
 
+        getInsertIndex(columnEl, clientY) {
+            const cards = columnEl.querySelectorAll('.card');
+            for (let i = 0; i < cards.length; i++) {
+                const rect = cards[i].getBoundingClientRect();
+                const centerY = rect.top + rect.height / 2;
+                if (clientY < centerY) return i;
+            }
+            return cards.length;
+        },
+
         drop(event, targetColumnId) {
             event.preventDefault();
             const cardId = event.dataTransfer.getData('cardId');
             if (!cardId) return;
+
+            const columnEl = event.currentTarget;
+            const insertIndex = this.getInsertIndex(columnEl, event.clientY);
 
             // Find and remove card from source column
             let card = null;
@@ -266,10 +279,11 @@ function teamApp() {
                 }
             }
 
-            // Add to target column
+            // Insert at calculated position
             if (card) {
                 if (!this.cards[targetColumnId]) this.cards[targetColumnId] = [];
-                this.cards[targetColumnId].push(card);
+                const adjustedIndex = Math.min(insertIndex, this.cards[targetColumnId].length);
+                this.cards[targetColumnId].splice(adjustedIndex, 0, card);
                 this.saveState();
             }
         },
@@ -338,6 +352,9 @@ function teamApp() {
                 if (target) {
                     const targetColumnId = target.getAttribute('data-column');
                     if (targetColumnId) {
+                        const touch = event.changedTouches[0];
+                        const insertIndex = this.getInsertIndex(target, touch.clientY);
+
                         let card = null;
                         for (const colId in this.cards) {
                             const idx = this.cards[colId].findIndex(c => c.id === this.touchDragState.cardId);
@@ -348,7 +365,8 @@ function teamApp() {
                         }
                         if (card) {
                             if (!this.cards[targetColumnId]) this.cards[targetColumnId] = [];
-                            this.cards[targetColumnId].push(card);
+                            const adjustedIndex = Math.min(insertIndex, this.cards[targetColumnId].length);
+                            this.cards[targetColumnId].splice(adjustedIndex, 0, card);
                             this.saveState();
                         }
                     }
