@@ -293,6 +293,7 @@ function teamApp() {
                 if (importData.teamConfigs) {
                     this.teamConfigs = importData.teamConfigs.map(t => ({
                         ...t,
+                        // Default to visible if not specified
                         visible: t.visible !== false
                     }));
                 }
