@@ -564,3 +564,117 @@ describe('拖放功能', () => {
         expect(app.cards.team1.map(c => c.id)).toEqual(['c', 'a', 'b']);
     });
 });
+
+// ===== 分隊結果匯入匯出 =====
+describe('分隊結果匯入匯出', () => {
+    beforeEach(() => {
+        vi.spyOn(window, 'alert').mockImplementation(() => {});
+    });
+
+    it('exportTeamData 產生包含所有資料的 JSON', () => {
+        app.cards.repo.push({ id: 'r1', name: '角色1', jobs: ['陌刀'], days: ['六'] });
+        app.cards.team1.push({ id: 't1', name: '角色2', jobs: ['補'], days: ['日'] });
+        app.teamConfigs[0].name = '自訂隊名';
+
+        const createElementSpy = vi.spyOn(document, 'createElement');
+        const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('mock-url');
+        const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+        app.exportTeamData();
+
+        // Verify a link element was created
+        expect(createElementSpy).toHaveBeenCalledWith('a');
+        
+        // Get the blob that was created
+        const blobCall = createObjectURLSpy.mock.calls[0];
+        expect(blobCall).toBeDefined();
+        
+        const blob = blobCall[0];
+        expect(blob).toBeInstanceOf(Blob);
+        expect(blob.type).toBe('application/json');
+
+        // Verify revoke was called
+        expect(revokeObjectURLSpy).toHaveBeenCalledWith('mock-url');
+
+        createElementSpy.mockRestore();
+        createObjectURLSpy.mockRestore();
+        revokeObjectURLSpy.mockRestore();
+    });
+
+    it('importTeamData 正確載入 JSON 資料', () => {
+        const importData = {
+            version: '1.0',
+            exportDate: '2024-01-01T00:00:00.000Z',
+            teamConfigs: [
+                { id: 'team1', name: '匯入隊伍1', visible: true },
+                { id: 'team2', name: '匯入隊伍2', visible: false },
+                { id: 'team3', name: '匯入隊伍3', visible: true },
+                { id: 'teamMobile', name: '匯入機動', visible: true }
+            ],
+            cards: {
+                repo: [{ id: 'i1', name: '匯入角色1', jobs: ['隊長'], days: ['六'] }],
+                team1: [{ id: 'i2', name: '匯入角色2', jobs: ['陌刀'], days: ['日'] }],
+                team2: [],
+                team3: [],
+                teamMobile: []
+            }
+        };
+
+        app.importTeamData(JSON.stringify(importData));
+
+        expect(app.cards.repo).toHaveLength(1);
+        expect(app.cards.repo[0].name).toBe('匯入角色1');
+        expect(app.cards.team1).toHaveLength(1);
+        expect(app.cards.team1[0].name).toBe('匯入角色2');
+        expect(app.teamConfigs[0].name).toBe('匯入隊伍1');
+        expect(app.teamConfigs[1].visible).toBe(false);
+    });
+
+    it('importTeamData 無效的 JSON 顯示錯誤', () => {
+        app.importTeamData('invalid json');
+        expect(window.alert).toHaveBeenCalledWith('匯入失敗：檔案格式錯誤');
+    });
+
+    it('importTeamData 缺少 cards 欄位顯示錯誤', () => {
+        const invalidData = {
+            version: '1.0',
+            teamConfigs: []
+        };
+
+        app.importTeamData(JSON.stringify(invalidData));
+        expect(window.alert).toHaveBeenCalledWith('匯入失敗：檔案格式錯誤');
+    });
+
+    it('importTeamData 成功後顯示成功訊息', () => {
+        const validData = {
+            cards: {
+                repo: [],
+                team1: [],
+                team2: [],
+                team3: [],
+                teamMobile: []
+            }
+        };
+
+        app.importTeamData(JSON.stringify(validData));
+        expect(window.alert).toHaveBeenCalledWith('匯入成功！');
+    });
+
+    it('importTeamData 沒有 teamConfigs 時保持原配置', () => {
+        const originalConfigs = JSON.parse(JSON.stringify(app.teamConfigs));
+        const validData = {
+            cards: {
+                repo: [{ id: 'test', name: 'Test', jobs: ['補'], days: [] }],
+                team1: [],
+                team2: [],
+                team3: [],
+                teamMobile: []
+            }
+        };
+
+        app.importTeamData(JSON.stringify(validData));
+
+        expect(app.teamConfigs[0].id).toBe(originalConfigs[0].id);
+        expect(app.cards.repo).toHaveLength(1);
+    });
+});
