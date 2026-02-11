@@ -259,9 +259,10 @@ function teamApp() {
         },
 
         exportTeamData() {
+            const now = new Date().toISOString();
             const exportData = {
                 version: '1.0',
-                exportDate: new Date().toISOString(),
+                exportDate: now,
                 teamConfigs: this.teamConfigs.map(t => ({
                     id: t.id,
                     name: t.name,
@@ -274,7 +275,7 @@ function teamApp() {
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.download = `team-division-${new Date().toISOString().split('T')[0]}.json`;
+            link.download = `team-division-${now.split('T')[0]}.json`;
             link.href = url;
             link.click();
             URL.revokeObjectURL(url);
