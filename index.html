@@ -465,8 +465,13 @@
                 </div>
                 <button id="addChar" @click="handleNewOrUpdateCharacter()">儲存</button>
                 <button x-show="editingId" @click="resetForm()">X</button>
-                <button @click="showImport = !showImport" class="action-btn" style="background: #34a853;">📥 匯入</button>
+                <button @click="showImport = !showImport" class="action-btn" style="background: #34a853;">📥 匯入CSV</button>
                 <button @click="downloadImage()" class="action-btn" style="background: #555;">📷 存圖</button>
+                <button @click="exportTeamData()" class="action-btn" style="background: #1a73e8;">💾 匯出分隊</button>
+                <label class="action-btn" style="background: #ea4335; cursor: pointer;">
+                    📂 匯入分隊
+                    <input type="file" accept=".json" @change="handleImportFile($event)" style="display: none;">
+                </label>
                 <button @click="showSettings = !showSettings" class="action-btn" style="background: #607d8b;">⚙️ 設定</button>
             </div>
 

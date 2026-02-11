@@ -258,6 +258,72 @@ function teamApp() {
             });
         },
 
+        exportTeamData() {
+            const exportData = {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                teamConfigs: this.teamConfigs.map(t => ({
+                    id: t.id,
+                    name: t.name,
+                    visible: t.visible
+                })),
+                cards: this.cards
+            };
+
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = `team-division-${new Date().toISOString().split('T')[0]}.json`;
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+        },
+
+        importTeamData(fileContent) {
+            try {
+                const importData = JSON.parse(fileContent);
+                
+                if (!importData.cards) {
+                    throw new Error('無效的檔案格式');
+                }
+
+                // Import team configs if available
+                if (importData.teamConfigs) {
+                    this.teamConfigs = importData.teamConfigs.map(t => ({
+                        ...t,
+                        visible: t.visible !== false
+                    }));
+                }
+
+                // Import cards
+                this.cards = importData.cards;
+
+                this.saveState();
+                alert('匯入成功！');
+            } catch (error) {
+                console.error('Import failed:', error);
+                alert('匯入失敗：檔案格式錯誤');
+            }
+        },
+
+        handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.importTeamData(e.target.result);
+                // Reset file input
+                event.target.value = '';
+            };
+            reader.onerror = () => {
+                alert('讀取檔案失敗');
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        },
+
         // Move menu
         toggleMoveMenu(cardId) {
             this.moveMenuCardId = this.moveMenuCardId === cardId ? null : cardId;
