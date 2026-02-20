@@ -188,6 +188,48 @@ describe('計數與統計', () => {
     });
 });
 
+// ===== 區間人數統計 =====
+describe('getCategoryStats', () => {
+    it('按區間分類統計人數', () => {
+        app.cards.team1.push(
+            { id: 'a', name: 'A', jobs: ['陌刀'], days: [] },
+            { id: 'b', name: 'B', jobs: ['陌刀'], days: [] },
+            { id: 'c', name: 'C', jobs: ['補'], days: [] },
+            { id: 'd', name: 'D', jobs: ['酒酒'], days: [] }
+        );
+
+        const stats = app.getCategoryStats('team1');
+        expect(stats).toEqual({ '坦克': 2, '奶媽': 1, '綜合豪': 1 });
+    });
+
+    it('空欄回傳空物件', () => {
+        const stats = app.getCategoryStats('team1');
+        expect(stats).toEqual({});
+    });
+
+    it('不顯示人數為零的區間', () => {
+        app.cards.team1.push(
+            { id: 'a', name: 'A', jobs: ['無名'], days: [] },
+            { id: 'b', name: 'B', jobs: ['玉玉'], days: [] }
+        );
+
+        const stats = app.getCategoryStats('team1');
+        expect(stats).toEqual({ '無名': 1, '玉玉': 1 });
+        expect(stats).not.toHaveProperty('坦克');
+        expect(stats).not.toHaveProperty('奶媽');
+        expect(stats).not.toHaveProperty('綜合豪');
+    });
+
+    it('categoryOverride 影響統計歸類', () => {
+        app.cards.team1.push(
+            { id: 'a', name: 'A', jobs: ['酒酒'], days: [], categoryOverride: 'tank' }
+        );
+
+        const stats = app.getCategoryStats('team1');
+        expect(stats).toEqual({ '坦克': 1 });
+    });
+});
+
 // ===== 職業配色 =====
 describe('職業配色', () => {
     it('getJobClass 隊長→job-red', () => {

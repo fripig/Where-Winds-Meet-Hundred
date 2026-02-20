@@ -125,6 +125,17 @@ function teamApp() {
             return jobCounts;
         },
 
+        getCategoryStats(columnId) {
+            const categories = this.getCategoryCards(columnId);
+            const stats = {};
+            categories.forEach(cat => {
+                if (cat.cards.length > 0) {
+                    stats[cat.name] = cat.cards.length;
+                }
+            });
+            return stats;
+        },
+
         getJobClass(job) {
             if (job === '隊長') return 'job-red';
             if (job === '陌刀') return 'job-yellow';

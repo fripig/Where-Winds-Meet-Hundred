@@ -593,12 +593,12 @@
                             </div>
                         </div>
                         <div style="width:100%; font-size:0.75em; color:#ddd; margin-top:4px; display:flex; flex-wrap:wrap; gap:4px;">
-                            <template x-for="(count, job) in getJobStats(config.id)" :key="job">
+                            <template x-for="(count, cat) in getCategoryStats(config.id)" :key="cat">
                                 <span style="background:rgba(255,255,255,0.25); padding:1px 4px; border-radius:3px; color: #fff; border: 1px solid rgba(255,255,255,0.4);">
-                                    <span x-text="job + ':' + count"></span>
+                                    <span x-text="cat + ':' + count"></span>
                                 </span>
                             </template>
-                            <span x-show="Object.keys(getJobStats(config.id)).length === 0" style="opacity:0.5; font-size: 0.9em;">-</span>
+                            <span x-show="Object.keys(getCategoryStats(config.id)).length === 0" style="opacity:0.5; font-size: 0.9em;">-</span>
                         </div>
                     </div>
                     <template x-for="cat in getCategoryCards(config.id)" :key="cat.id">
