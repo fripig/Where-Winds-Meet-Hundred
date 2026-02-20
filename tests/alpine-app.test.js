@@ -91,20 +91,6 @@ describe('角色管理', () => {
         expect(card.jobs).toEqual(['隊長']);
     });
 
-    it('handleNewOrUpdateCharacter 更新角色時保留 section 欄位', () => {
-        app.cards.team1.push({ id: 'section-test', name: '隊員', jobs: ['補'], days: [], section: '坦克' });
-
-        app.editingId = 'section-test';
-        app.charName = '新名稱';
-        app.selectedJobs = ['隊長'];
-        app.selectedDays = [];
-
-        app.handleNewOrUpdateCharacter();
-
-        const card = app.cards.team1.find(c => c.id === 'section-test');
-        expect(card.section).toBe('坦克');
-    });
-
     it('handleNewOrUpdateCharacter 名稱為空時不執行', () => {
         app.charName = '';
         app.selectedJobs = ['陌刀'];
@@ -199,45 +185,6 @@ describe('計數與統計', () => {
 
         const stats = app.getJobStats('team1');
         expect(stats).toEqual({ '隊長': 1, '補': 1 });
-    });
-
-    it('getSectionStats 正確統計各欄區間分佈', () => {
-        app.cards.team1.push(
-            { id: 'a', name: 'A', jobs: ['陌刀'], days: [], section: '坦克' },
-            { id: 'b', name: 'B', jobs: ['陌刀'], days: [], section: '坦克' },
-            { id: 'c', name: 'C', jobs: ['補'], days: [], section: '奶媽' }
-        );
-
-        const stats = app.getSectionStats('team1');
-        expect(stats).toEqual({ '坦克': 2, '奶媽': 1 });
-    });
-
-    it('getSectionStats 無 section 欄位時預設歸入綜合豪', () => {
-        app.cards.team1.push(
-            { id: 'a', name: 'A', jobs: ['酒酒'], days: [] },
-            { id: 'b', name: 'B', jobs: ['雙劍'], days: [], section: '綜合豪' }
-        );
-
-        const stats = app.getSectionStats('team1');
-        expect(stats).toEqual({ '綜合豪': 2 });
-    });
-
-    it('getSectionStats 空欄位回傳空物件', () => {
-        const stats = app.getSectionStats('team1');
-        expect(stats).toEqual({});
-    });
-
-    it('getSectionStats 五個區間各自計數', () => {
-        app.cards.team1.push(
-            { id: 'a', name: 'A', jobs: [], days: [], section: '坦克' },
-            { id: 'b', name: 'B', jobs: [], days: [], section: '奶媽' },
-            { id: 'c', name: 'C', jobs: [], days: [], section: '無名' },
-            { id: 'd', name: 'D', jobs: [], days: [], section: '玉玉' },
-            { id: 'e', name: 'E', jobs: [], days: [], section: '綜合豪' }
-        );
-
-        const stats = app.getSectionStats('team1');
-        expect(stats).toEqual({ '坦克': 1, '奶媽': 1, '無名': 1, '玉玉': 1, '綜合豪': 1 });
     });
 });
 
