@@ -44,6 +44,20 @@ function teamApp() {
             return this.teamConfigs.filter(t => t.visible !== false);
         },
 
+        get jungleCards() {
+            const columnOrder = ['repo', ...this.teamConfigs.map(t => t.id)];
+            const result = [];
+            for (const colId of columnOrder) {
+                const cards = this.cards[colId] || [];
+                for (const card of cards) {
+                    if (card.jobs.includes('打野')) {
+                        result.push(card);
+                    }
+                }
+            }
+            return result;
+        },
+
         safeGetStorage(key) {
             try {
                 const data = localStorage.getItem(key);

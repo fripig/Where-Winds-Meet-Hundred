@@ -814,6 +814,30 @@ describe('分類拖曳', () => {
     });
 });
 
+// ===== 打野隊 =====
+describe('打野隊', () => {
+    it('jungleCards 回傳所有有打野 tag 的卡片', () => {
+        app.cards.repo.push({ id: 'a', name: 'A', jobs: ['陌刀', '打野'], days: [] });
+        app.cards.team1.push({ id: 'b', name: 'B', jobs: ['補'], days: [] });
+        app.cards.team2.push({ id: 'c', name: 'C', jobs: ['打野'], days: [] });
+
+        expect(app.jungleCards.map(c => c.id)).toEqual(['a', 'c']);
+    });
+
+    it('jungleCards 無打野角色時回傳空陣列', () => {
+        app.cards.repo.push({ id: 'a', name: 'A', jobs: ['陌刀'], days: [] });
+        expect(app.jungleCards).toEqual([]);
+    });
+
+    it('jungleCards 順序為 repo → team1 → team2 → team3 → teamMobile', () => {
+        app.cards.team2.push({ id: 'c', name: 'C', jobs: ['打野'], days: [] });
+        app.cards.repo.push({ id: 'a', name: 'A', jobs: ['打野'], days: [] });
+        app.cards.team1.push({ id: 'b', name: 'B', jobs: ['打野'], days: [] });
+
+        expect(app.jungleCards.map(c => c.id)).toEqual(['a', 'b', 'c']);
+    });
+});
+
 // ===== 分類摺疊 =====
 describe('分類摺疊', () => {
     it('toggleCategory 切換摺疊狀態', () => {
