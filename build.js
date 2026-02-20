@@ -12,6 +12,7 @@ const outDir = path.join(root, 'dist');
 
 // Read source files
 let html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
+const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf-8');
 const alpineJs = fs.readFileSync(path.join(root, 'alpine.min.js'), 'utf-8');
 const appJs = fs.readFileSync(path.join(root, 'src', 'alpine-app.js'), 'utf-8');
 
@@ -21,13 +22,19 @@ const appJsBrowser = appJs.replace(
     ''
 ).trimEnd();
 
-// 1. Remove Alpine.js <script defer> from <head> (defer is ignored on inline scripts)
+// 1. Inline CSS (replace <link> with <style>)
+html = html.replace(
+    '    <link rel="stylesheet" href="styles.css">',
+    () => '    <style>\n' + css + '\n    </style>'
+);
+
+// 2. Remove Alpine.js <script defer> from <head> (defer is ignored on inline scripts)
 html = html.replace(
     '    <script defer src="alpine.min.js"></script>\n',
     () => ''
 );
 
-// 2. Replace app JS with: app JS inline + Alpine.js inline (order matters!)
+// 3. Replace app JS with: app JS inline + Alpine.js inline (order matters!)
 //    - App JS first: registers document.addEventListener('alpine:init', ...) listener
 //    - Alpine.js second: starts up, fires 'alpine:init', our listener calls Alpine.data()
 //    NOTE: use function replacement to avoid $$ special patterns in String.replace()
