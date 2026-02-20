@@ -169,7 +169,7 @@ function teamApp() {
 
         getCardCategory(card) {
             if (card.categoryOverride) return card.categoryOverride;
-            const job = card.jobs.find(j => j !== '隊長');
+            const job = card.jobs.find(j => j !== '隊長' && j !== '打野');
             if (!job) return 'general';
             const cat = ROLE_CATEGORIES.find(c => c.jobs.includes(job));
             return cat ? cat.id : 'general';

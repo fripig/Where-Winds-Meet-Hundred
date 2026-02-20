@@ -719,6 +719,15 @@ describe('角色分類', () => {
     it('getCardCategory 多職業取第一個非隊長職業', () => {
         expect(app.getCardCategory({ jobs: ['隊長', '補', '陌刀'], days: [] })).toBe('healer');
     });
+
+    it('getCardCategory 打野 tag 不影響分類（取其他職業）', () => {
+        expect(app.getCardCategory({ jobs: ['陌刀', '打野'], days: [] })).toBe('tank');
+        expect(app.getCardCategory({ jobs: ['打野', '補'], days: [] })).toBe('healer');
+    });
+
+    it('getCardCategory 只有打野時歸綜合豪', () => {
+        expect(app.getCardCategory({ jobs: ['打野'], days: [] })).toBe('general');
+    });
 });
 
 describe('getCategoryCards', () => {
