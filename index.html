@@ -547,12 +547,12 @@
                             </div>
                         </div>
                         <div style="width:100%; font-size:0.75em; color:#ddd; margin-top:4px; display:flex; flex-wrap:wrap; gap:4px;">
-                            <template x-for="(count, job) in getJobStats(config.id)" :key="job">
+                            <template x-for="(count, section) in getSectionStats(config.id)" :key="section">
                                 <span style="background:rgba(255,255,255,0.25); padding:1px 4px; border-radius:3px; color: #fff; border: 1px solid rgba(255,255,255,0.4);">
-                                    <span x-text="job + ':' + count"></span>
+                                    <span x-text="section + ':' + count"></span>
                                 </span>
                             </template>
-                            <span x-show="Object.keys(getJobStats(config.id)).length === 0" style="opacity:0.5; font-size: 0.9em;">-</span>
+                            <span x-show="Object.keys(getSectionStats(config.id)).length === 0" style="opacity:0.5; font-size: 0.9em;">-</span>
                         </div>
                     </div>
                     <template x-for="card in getColumnCards(config.id)" :key="card.id">
@@ -578,6 +578,13 @@
                             <template x-for="job in card.jobs" :key="job">
                                 <span class="job-tag" :class="getJobClass(job)" x-text="job"></span>
                             </template>
+                            <select :value="card.section || '綜合豪'"
+                                @change="card.section = $event.target.value; saveState()"
+                                style="font-size:0.7em; background:transparent; border:1px solid #ccc; border-radius:3px; color:#555; cursor:pointer; padding:1px 2px; margin-top:4px; max-width:72px; outline:none; display:block;">
+                                <template x-for="s in sections" :key="s">
+                                    <option :value="s" x-text="s"></option>
+                                </template>
+                            </select>
                         </div>
                     </template>
                 </div>
