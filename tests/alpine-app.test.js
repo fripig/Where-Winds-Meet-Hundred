@@ -712,3 +712,39 @@ describe('角色分類', () => {
         expect(app.getCardCategory({ jobs: ['隊長', '補', '陌刀'], days: [] })).toBe('healer');
     });
 });
+
+describe('getCategoryCards', () => {
+    it('按分類分群隊伍卡片', () => {
+        app.cards.team1 = [
+            { id: 'a', name: 'A', jobs: ['陌刀'], days: [] },
+            { id: 'b', name: 'B', jobs: ['補'], days: [] },
+            { id: 'c', name: 'C', jobs: ['酒酒'], days: [] },
+            { id: 'd', name: 'D', jobs: ['陌刀'], days: [] },
+        ];
+
+        const grouped = app.getCategoryCards('team1');
+        expect(grouped).toHaveLength(5);
+        expect(grouped[0].id).toBe('tank');
+        expect(grouped[0].cards.map(c => c.id)).toEqual(['a', 'd']);
+        expect(grouped[1].id).toBe('healer');
+        expect(grouped[1].cards.map(c => c.id)).toEqual(['b']);
+        expect(grouped[4].id).toBe('general');
+        expect(grouped[4].cards.map(c => c.id)).toEqual(['c']);
+    });
+
+    it('空欄位回傳5個空分類', () => {
+        const grouped = app.getCategoryCards('team1');
+        expect(grouped).toHaveLength(5);
+        grouped.forEach(g => expect(g.cards).toEqual([]));
+    });
+
+    it('categoryOverride 覆寫分類', () => {
+        app.cards.team1 = [
+            { id: 'a', name: 'A', jobs: ['陌刀'], days: [], categoryOverride: 'healer' },
+        ];
+
+        const grouped = app.getCategoryCards('team1');
+        expect(grouped[0].cards).toEqual([]); // tank empty
+        expect(grouped[1].cards.map(c => c.id)).toEqual(['a']); // in healer
+    });
+});

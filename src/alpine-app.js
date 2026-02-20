@@ -130,6 +130,15 @@ function teamApp() {
             return 'job-blue';
         },
 
+        getCategoryCards(columnId) {
+            const cards = this.getColumnCards(columnId);
+            return ROLE_CATEGORIES.map(cat => ({
+                id: cat.id,
+                name: cat.name,
+                cards: cards.filter(card => this.getCardCategory(card) === cat.id),
+            }));
+        },
+
         getCardCategory(card) {
             if (card.categoryOverride) return card.categoryOverride;
             const job = card.jobs.find(j => j !== '隊長');
