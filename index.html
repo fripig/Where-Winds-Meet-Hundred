@@ -289,6 +289,12 @@
             border-color: #bbdefb;
         }
 
+        .job-purple {
+            background: #f3e5f5;
+            color: #6a1b9a;
+            border-color: #ce93d8;
+        }
+
         .count-badge {
             background: rgba(255, 255, 255, 0.3);
             color: white;
@@ -578,7 +584,7 @@
             </div>
         </div>
 
-        <div class="board" :style="'grid-template-columns: repeat(' + visibleTeams.length + ', 1fr)'">
+        <div class="board" :style="'grid-template-columns: repeat(' + (visibleTeams.length + (jungleCards.length > 0 ? 1 : 0)) + ', 1fr)'">
             <template x-for="config in teamConfigs" :key="config.id">
                 <div class="column"
                      x-show="config.visible"
@@ -593,12 +599,12 @@
                             </div>
                         </div>
                         <div style="width:100%; font-size:0.75em; color:#ddd; margin-top:4px; display:flex; flex-wrap:wrap; gap:4px;">
-                            <template x-for="(count, job) in getJobStats(config.id)" :key="job">
+                            <template x-for="(count, cat) in getCategoryStats(config.id)" :key="cat">
                                 <span style="background:rgba(255,255,255,0.25); padding:1px 4px; border-radius:3px; color: #fff; border: 1px solid rgba(255,255,255,0.4);">
-                                    <span x-text="job + ':' + count"></span>
+                                    <span x-text="cat + ':' + count"></span>
                                 </span>
                             </template>
-                            <span x-show="Object.keys(getJobStats(config.id)).length === 0" style="opacity:0.5; font-size: 0.9em;">-</span>
+                            <span x-show="Object.keys(getCategoryStats(config.id)).length === 0" style="opacity:0.5; font-size: 0.9em;">-</span>
                         </div>
                     </div>
                     <template x-for="cat in getCategoryCards(config.id)" :key="cat.id">
@@ -647,6 +653,25 @@
                     </template>
                 </div>
             </template>
+            <!-- 打野隊 (virtual read-only column) -->
+            <div class="column" x-show="jungleCards.length > 0">
+                <div class="column-header">
+                    <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                        <span class="column-title" style="font-weight:bold; font-size:0.95em;">🌿 打野隊</span>
+                        <div class="header-actions">
+                            <span class="count-badge" x-text="jungleCards.length">0</span>
+                        </div>
+                    </div>
+                </div>
+                <template x-for="card in jungleCards" :key="'jungle-' + card.id">
+                    <div class="card" style="cursor: default;">
+                        <strong x-text="card.name"></strong><br>
+                        <template x-for="job in card.jobs" :key="job">
+                            <span class="job-tag" :class="getJobClass(job)" x-text="job"></span>
+                        </template>
+                    </div>
+                </template>
+            </div>
         </div>
     </div>
 
