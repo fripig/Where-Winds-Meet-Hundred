@@ -748,3 +748,17 @@ describe('getCategoryCards', () => {
         expect(grouped[1].cards.map(c => c.id)).toEqual(['a']); // in healer
     });
 });
+
+// ===== 分類摺疊 =====
+describe('分類摺疊', () => {
+    it('toggleCategory 切換摺疊狀態', () => {
+        app.toggleCategory('team1', 'tank');
+        expect(app.isCategoryCollapsed('team1', 'tank')).toBe(true);
+        app.toggleCategory('team1', 'tank');
+        expect(app.isCategoryCollapsed('team1', 'tank')).toBe(false);
+    });
+
+    it('isCategoryCollapsed 預設為展開', () => {
+        expect(app.isCategoryCollapsed('team1', 'tank')).toBe(false);
+    });
+});

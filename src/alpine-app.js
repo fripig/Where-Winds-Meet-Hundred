@@ -33,6 +33,8 @@ function teamApp() {
         touchDragState: null,
         touchDragClone: null,
 
+        collapsedCategories: {},
+
         init() {
             this.loadState();
             this.$watch('teamConfigs', () => this.saveState());
@@ -145,6 +147,15 @@ function teamApp() {
             if (!job) return 'general';
             const cat = ROLE_CATEGORIES.find(c => c.jobs.includes(job));
             return cat ? cat.id : 'general';
+        },
+
+        toggleCategory(columnId, categoryId) {
+            const key = columnId + ':' + categoryId;
+            this.collapsedCategories[key] = !this.collapsedCategories[key];
+        },
+
+        isCategoryCollapsed(columnId, categoryId) {
+            return !!this.collapsedCategories[columnId + ':' + categoryId];
         },
 
         handleNewOrUpdateCharacter() {
