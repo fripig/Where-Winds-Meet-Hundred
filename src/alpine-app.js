@@ -401,10 +401,53 @@ function teamApp() {
             if (card) {
                 if (!this.cards[targetColumnId]) this.cards[targetColumnId] = [];
                 this.cards[targetColumnId].push(card);
+                if (targetColumnId === 'repo') {
+                    delete card.categoryOverride;
+                }
                 this.saveState();
                 this.moveMenuCardId = null;
                 this.animateCardDrop(cardId);
             }
+        },
+
+        dragOverCategory(event) {
+            event.preventDefault();
+            const categoryCards = event.currentTarget.querySelector('.category-cards');
+            if (categoryCards) {
+                this.showDropIndicator(categoryCards, event.clientY);
+            }
+        },
+
+        dropToCategory(event, columnId, categoryId) {
+            event.preventDefault();
+            const cardId = event.dataTransfer.getData('cardId');
+            if (!cardId) return;
+
+            // Find and remove card from source
+            let card = null;
+            for (const colId in this.cards) {
+                const idx = this.cards[colId].findIndex(c => c.id === cardId);
+                if (idx !== -1) {
+                    card = this.cards[colId].splice(idx, 1)[0];
+                    break;
+                }
+            }
+
+            if (card) {
+                // Determine if override is needed
+                const autoCategory = this.getCardCategory({ ...card, categoryOverride: undefined });
+                if (categoryId !== autoCategory) {
+                    card.categoryOverride = categoryId;
+                } else {
+                    delete card.categoryOverride;
+                }
+
+                if (!this.cards[columnId]) this.cards[columnId] = [];
+                this.cards[columnId].push(card);
+                this.saveState();
+                this.animateCardDrop(cardId);
+            }
+            this.clearDropIndicator();
         },
 
         // Drag and Drop

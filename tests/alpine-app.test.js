@@ -749,6 +749,63 @@ describe('getCategoryCards', () => {
     });
 });
 
+// ===== 分類拖曳 =====
+describe('分類拖曳', () => {
+    it('dropToCategory 拖入不同分類時設定 categoryOverride', () => {
+        app.cards.repo = [
+            { id: 'a', name: 'A', jobs: ['陌刀'], days: [] },
+        ];
+
+        const event = {
+            preventDefault: vi.fn(),
+            stopPropagation: vi.fn(),
+            clientY: 9999,
+            dataTransfer: { getData: () => 'a' },
+            currentTarget: {
+                querySelector: () => ({
+                    querySelectorAll: () => [],
+                }),
+            },
+        };
+
+        app.dropToCategory(event, 'team1', 'healer');
+
+        expect(app.cards.team1[0].categoryOverride).toBe('healer');
+    });
+
+    it('dropToCategory 拖入自動對應分類時不設定 categoryOverride', () => {
+        app.cards.repo = [
+            { id: 'a', name: 'A', jobs: ['陌刀'], days: [] },
+        ];
+
+        const event = {
+            preventDefault: vi.fn(),
+            stopPropagation: vi.fn(),
+            clientY: 9999,
+            dataTransfer: { getData: () => 'a' },
+            currentTarget: {
+                querySelector: () => ({
+                    querySelectorAll: () => [],
+                }),
+            },
+        };
+
+        app.dropToCategory(event, 'team1', 'tank');
+
+        expect(app.cards.team1[0].categoryOverride).toBeUndefined();
+    });
+
+    it('moveCardTo 移到 repo 時清除 categoryOverride', () => {
+        app.cards.team1 = [
+            { id: 'a', name: 'A', jobs: ['陌刀'], days: [], categoryOverride: 'healer' },
+        ];
+
+        app.moveCardTo('a', 'repo');
+
+        expect(app.cards.repo[0].categoryOverride).toBeUndefined();
+    });
+});
+
 // ===== 分類摺疊 =====
 describe('分類摺疊', () => {
     it('toggleCategory 切換摺疊狀態', () => {
