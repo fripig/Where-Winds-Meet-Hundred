@@ -202,9 +202,17 @@ describe('職業配色', () => {
         expect(app.getJobClass('補')).toBe('job-green');
     });
 
+    it('getJobClass 打野→job-purple', () => {
+        expect(app.getJobClass('打野')).toBe('job-purple');
+    });
+
     it('getJobClass 其他→job-blue', () => {
         expect(app.getJobClass('玉玉')).toBe('job-blue');
         expect(app.getJobClass('酒酒')).toBe('job-blue');
+    });
+
+    it('availableJobs 包含打野', () => {
+        expect(app.availableJobs).toContain('打野');
     });
 });
 

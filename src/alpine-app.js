@@ -24,7 +24,7 @@ function teamApp() {
         showImport: false,
         showSettings: false,
         csvInput: '',
-        availableJobs: ['隊長', '陌刀', '補', '玉玉', '無名', '酒酒', '雙劍', '雙刀'],
+        availableJobs: ['隊長', '陌刀', '補', '玉玉', '無名', '酒酒', '雙劍', '雙刀', '打野'],
 
         // Move menu state
         moveMenuCardId: null,
@@ -125,10 +125,22 @@ function teamApp() {
             return jobCounts;
         },
 
+        getCategoryStats(columnId) {
+            const categories = this.getCategoryCards(columnId);
+            const stats = {};
+            categories.forEach(cat => {
+                if (cat.cards.length > 0) {
+                    stats[cat.name] = cat.cards.length;
+                }
+            });
+            return stats;
+        },
+
         getJobClass(job) {
             if (job === '隊長') return 'job-red';
             if (job === '陌刀') return 'job-yellow';
             if (job === '補') return 'job-green';
+            if (job === '打野') return 'job-purple';
             return 'job-blue';
         },
 
