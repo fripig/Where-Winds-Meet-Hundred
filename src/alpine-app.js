@@ -17,7 +17,6 @@ function teamApp() {
         showSettings: false,
         csvInput: '',
         availableJobs: ['隊長', '陌刀', '補', '玉玉', '無名', '酒酒', '雙劍', '雙刀'],
-        sections: ['坦克', '奶媽', '無名', '玉玉', '綜合豪'],
 
         // Move menu state
         moveMenuCardId: null,
@@ -116,16 +115,6 @@ function teamApp() {
             return jobCounts;
         },
 
-        getSectionStats(columnId) {
-            const cards = this.getColumnCards(columnId);
-            const sectionCounts = {};
-            cards.forEach(card => {
-                const section = card.section || '綜合豪';
-                sectionCounts[section] = (sectionCounts[section] || 0) + 1;
-            });
-            return sectionCounts;
-        },
-
         getJobClass(job) {
             if (job === '隊長') return 'job-red';
             if (job === '陌刀') return 'job-yellow';
@@ -146,7 +135,7 @@ function teamApp() {
                 for (const colId in this.cards) {
                     const idx = this.cards[colId].findIndex(c => c.id === this.editingId);
                     if (idx !== -1) {
-                        this.cards[colId][idx] = { id: this.editingId, name, jobs, days, section: this.cards[colId][idx].section };
+                        this.cards[colId][idx] = { id: this.editingId, name, jobs, days };
                         found = true;
                         break;
                     }
