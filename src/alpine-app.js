@@ -1,3 +1,11 @@
+const ROLE_CATEGORIES = [
+    { id: 'tank',    name: '坦克',   jobs: ['陌刀'] },
+    { id: 'healer',  name: '奶媽',   jobs: ['補'] },
+    { id: 'wuming',  name: '無名',   jobs: ['無名'] },
+    { id: 'yuyu',    name: '玉玉',   jobs: ['玉玉'] },
+    { id: 'general', name: '綜合豪', jobs: ['酒酒', '雙劍', '雙刀'] },
+];
+
 function teamApp() {
     return {
         storageKey: 'teamData_v2',
@@ -120,6 +128,14 @@ function teamApp() {
             if (job === '陌刀') return 'job-yellow';
             if (job === '補') return 'job-green';
             return 'job-blue';
+        },
+
+        getCardCategory(card) {
+            if (card.categoryOverride) return card.categoryOverride;
+            const job = card.jobs.find(j => j !== '隊長');
+            if (!job) return 'general';
+            const cat = ROLE_CATEGORIES.find(c => c.jobs.includes(job));
+            return cat ? cat.id : 'general';
         },
 
         handleNewOrUpdateCharacter() {
@@ -576,5 +592,5 @@ if (typeof document !== 'undefined') {
 
 // Export for testing (Vitest), conditional to avoid browser syntax error
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { teamApp };
+    module.exports = { teamApp, ROLE_CATEGORIES };
 }

@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-const { teamApp } = require('../src/alpine-app.js');
+const { teamApp, ROLE_CATEGORIES } = require('../src/alpine-app.js');
 
 let app;
 
@@ -676,5 +676,39 @@ describe('分隊結果匯入匯出', () => {
 
         expect(app.teamConfigs[0].id).toBe(originalConfigs[0].id);
         expect(app.cards.repo).toHaveLength(1);
+    });
+});
+
+// ===== 角色分類 =====
+describe('角色分類', () => {
+    it('getCardCategory 依第一個非隊長職業歸類', () => {
+        expect(app.getCardCategory({ jobs: ['陌刀'], days: [] })).toBe('tank');
+        expect(app.getCardCategory({ jobs: ['補'], days: [] })).toBe('healer');
+        expect(app.getCardCategory({ jobs: ['無名'], days: [] })).toBe('wuming');
+        expect(app.getCardCategory({ jobs: ['玉玉'], days: [] })).toBe('yuyu');
+        expect(app.getCardCategory({ jobs: ['酒酒'], days: [] })).toBe('general');
+        expect(app.getCardCategory({ jobs: ['雙劍'], days: [] })).toBe('general');
+        expect(app.getCardCategory({ jobs: ['雙刀'], days: [] })).toBe('general');
+    });
+
+    it('getCardCategory 隊長依其他職業歸類', () => {
+        expect(app.getCardCategory({ jobs: ['隊長', '陌刀'], days: [] })).toBe('tank');
+        expect(app.getCardCategory({ jobs: ['隊長', '補'], days: [] })).toBe('healer');
+    });
+
+    it('getCardCategory 只有隊長時歸綜合豪', () => {
+        expect(app.getCardCategory({ jobs: ['隊長'], days: [] })).toBe('general');
+    });
+
+    it('getCardCategory 無職業時歸綜合豪', () => {
+        expect(app.getCardCategory({ jobs: [], days: [] })).toBe('general');
+    });
+
+    it('getCardCategory categoryOverride 優先', () => {
+        expect(app.getCardCategory({ jobs: ['陌刀'], days: [], categoryOverride: 'healer' })).toBe('healer');
+    });
+
+    it('getCardCategory 多職業取第一個非隊長職業', () => {
+        expect(app.getCardCategory({ jobs: ['隊長', '補', '陌刀'], days: [] })).toBe('healer');
     });
 });
