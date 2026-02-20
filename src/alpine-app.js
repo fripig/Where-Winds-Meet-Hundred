@@ -572,12 +572,14 @@ function teamApp() {
                 this.touchDragClone.style.top = (touch.clientY - this.touchDragState.offsetY) + 'px';
 
                 this.clearDropHighlights();
-                const target = this.getDropTarget(touch.clientX, touch.clientY);
+                const { columnEl, categoryEl } = this.getDropTarget(touch.clientX, touch.clientY);
+                const target = columnEl;
                 if (target) {
                     if (target !== this.touchDragState.originalCard.closest('[data-column]')) {
                         target.classList.add('drop-hover');
                     }
-                    this.showDropIndicator(target, touch.clientY);
+                    const catCards = categoryEl ? categoryEl.querySelector('.category-cards') : null;
+                    this.showDropIndicator(catCards || target, touch.clientY);
                 } else {
                     this.clearDropIndicator();
                 }
@@ -589,13 +591,12 @@ function teamApp() {
 
             if (this.touchDragState.isDragging) {
                 const touch = event.changedTouches[0];
-                const target = this.getDropTarget(touch.clientX, touch.clientY);
+                const { columnEl, categoryEl } = this.getDropTarget(touch.clientX, touch.clientY);
 
-                if (target) {
-                    const targetColumnId = target.getAttribute('data-column');
+                if (columnEl) {
+                    const targetColumnId = columnEl.getAttribute('data-column');
                     if (targetColumnId) {
-                        const touch = event.changedTouches[0];
-                        const insertIndex = this.getInsertIndex(target, touch.clientY);
+                        const insertIndex = this.getInsertIndex(columnEl, touch.clientY);
 
                         let card = null;
                         for (const colId in this.cards) {
@@ -609,6 +610,20 @@ function teamApp() {
                             if (!this.cards[targetColumnId]) this.cards[targetColumnId] = [];
                             const adjustedIndex = Math.min(insertIndex, this.cards[targetColumnId].length);
                             this.cards[targetColumnId].splice(adjustedIndex, 0, card);
+
+                            // Handle category override for team columns
+                            if (categoryEl && targetColumnId !== 'repo') {
+                                const categoryId = categoryEl.getAttribute('data-category');
+                                const autoCategory = this.getCardCategory({ ...card, categoryOverride: undefined });
+                                if (categoryId && categoryId !== autoCategory) {
+                                    card.categoryOverride = categoryId;
+                                } else {
+                                    delete card.categoryOverride;
+                                }
+                            } else if (targetColumnId === 'repo') {
+                                delete card.categoryOverride;
+                            }
+
                             this.saveState();
                             this.animateCardDrop(this.touchDragState.cardId);
                         }
@@ -632,10 +647,19 @@ function teamApp() {
             let el = document.elementFromPoint(x, y);
             if (this.touchDragClone) this.touchDragClone.style.display = '';
 
-            while (el && !el.hasAttribute('data-column')) {
-                el = el.parentElement;
+            // Find category section first
+            let categoryEl = el;
+            while (categoryEl && !categoryEl.hasAttribute('data-category')) {
+                categoryEl = categoryEl.parentElement;
             }
-            return el;
+
+            // Then find column
+            let columnEl = el;
+            while (columnEl && !columnEl.hasAttribute('data-column')) {
+                columnEl = columnEl.parentElement;
+            }
+
+            return { columnEl, categoryEl };
         },
 
         clearDropHighlights() {
