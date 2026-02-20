@@ -360,6 +360,54 @@
             }
         }
 
+        /* 分類區塊 */
+        .category-section {
+            margin-bottom: 6px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.08);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: bold;
+            color: #555;
+            -webkit-user-select: none;
+            user-select: none;
+            margin-bottom: 4px;
+        }
+
+        .category-header:hover {
+            background: rgba(0, 0, 0, 0.12);
+        }
+
+        .category-header .cat-toggle {
+            font-size: 0.7em;
+            margin-right: 4px;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        .category-header .cat-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .category-header .cat-count {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            padding: 0 6px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .category-cards {
+            min-height: 2px;
+        }
+
         /* ===== RWD: 手機版面 ===== */
         @media (max-width: 768px) {
             body {
@@ -537,7 +585,7 @@
                 <div class="column"
                      x-show="config.visible"
                      @drop="drop($event, config.id)"
-                     @dragover="dragOver($event)"
+                     @dragover.prevent
                      :data-column="config.id">
                     <div class="column-header" style="flex-wrap: wrap;">
                         <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
@@ -555,29 +603,48 @@
                             <span x-show="Object.keys(getJobStats(config.id)).length === 0" style="opacity:0.5; font-size: 0.9em;">-</span>
                         </div>
                     </div>
-                    <template x-for="card in getColumnCards(config.id)" :key="card.id">
-                        <div class="card"
-                             draggable="true"
-                             :data-card-id="card.id"
-                             @dragstart="dragStart($event, card.id)"
-                             @dragover.prevent
-                             @touchstart="touchStart($event, card.id)"
-                             @touchmove="touchMove($event)"
-                             @touchend="touchEnd($event)">
-                            <div class="card-btns">
-                                <button class="icon-btn" @click="toggleMoveMenu(card.id)">⤴</button>
-                                <button class="icon-btn" @click="startEdit(card.id)">✏️</button>
-                                <button class="icon-btn" @click="moveCardTo(card.id, 'repo')" title="移出隊伍">↩</button>
+                    <template x-for="cat in getCategoryCards(config.id)" :key="cat.id">
+                        <div class="category-section"
+                             :data-category="cat.id"
+                             @drop.stop="dropToCategory($event, config.id, cat.id)"
+                             @dragover.prevent.stop="dragOverCategory($event)">
+                            <div class="category-header" @click="toggleCategory(config.id, cat.id)">
+                                <span>
+                                    <span class="cat-toggle" :class="{ 'collapsed': isCategoryCollapsed(config.id, cat.id) }">▼</span>
+                                    <span x-text="cat.name"></span>
+                                </span>
+                                <span class="cat-count" x-text="cat.cards.length"></span>
                             </div>
-                            <div class="move-menu" x-show="moveMenuCardId === card.id" @click.outside="moveMenuCardId = null">
-                                <template x-for="col in getMoveTargets(card.id)" :key="col.id">
-                                    <button @click="moveCardTo(card.id, col.id)" x-text="col.name"></button>
+                            <div class="category-cards"
+                                 x-show="!isCategoryCollapsed(config.id, cat.id)"
+                                 :data-column="config.id"
+                                 :data-category-drop="cat.id">
+                                <template x-for="card in cat.cards" :key="card.id">
+                                    <div class="card"
+                                         draggable="true"
+                                         :data-card-id="card.id"
+                                         @dragstart="dragStart($event, card.id)"
+                                         @dragover.prevent.stop
+                                         @touchstart="touchStart($event, card.id)"
+                                         @touchmove="touchMove($event)"
+                                         @touchend="touchEnd($event)">
+                                        <div class="card-btns">
+                                            <button class="icon-btn" @click="toggleMoveMenu(card.id)">⤴</button>
+                                            <button class="icon-btn" @click="startEdit(card.id)">✏️</button>
+                                            <button class="icon-btn" @click="moveCardTo(card.id, 'repo')" title="移出隊伍">↩</button>
+                                        </div>
+                                        <div class="move-menu" x-show="moveMenuCardId === card.id" @click.outside="moveMenuCardId = null">
+                                            <template x-for="col in getMoveTargets(card.id)" :key="col.id">
+                                                <button @click="moveCardTo(card.id, col.id)" x-text="col.name"></button>
+                                            </template>
+                                        </div>
+                                        <strong x-text="card.name"></strong><br>
+                                        <template x-for="job in card.jobs" :key="job">
+                                            <span class="job-tag" :class="getJobClass(job)" x-text="job"></span>
+                                        </template>
+                                    </div>
                                 </template>
                             </div>
-                            <strong x-text="card.name"></strong><br>
-                            <template x-for="job in card.jobs" :key="job">
-                                <span class="job-tag" :class="getJobClass(job)" x-text="job"></span>
-                            </template>
                         </div>
                     </template>
                 </div>
