@@ -468,10 +468,8 @@
                 <button @click="showImport = !showImport" class="action-btn" style="background: #34a853;">📥 匯入CSV</button>
                 <button @click="downloadImage()" class="action-btn" style="background: #555;">📷 存圖</button>
                 <button @click="exportTeamData()" class="action-btn" style="background: #1a73e8;">💾 匯出分隊</button>
-                <label class="action-btn" style="background: #ea4335; cursor: pointer;">
-                    📂 匯入分隊
-                    <input type="file" accept=".json" @change="handleImportFile($event)" style="display: none;">
-                </label>
+                <input type="file" accept=".json" @change="handleImportFile($event)" x-ref="importFile" style="display: none;">
+                <button @click="$refs.importFile.click()" class="action-btn" style="background: #ea4335;">📂 匯入分隊</button>
                 <button @click="showSettings = !showSettings" class="action-btn" style="background: #607d8b;">⚙️ 設定</button>
             </div>
 
